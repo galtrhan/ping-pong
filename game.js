@@ -1,13 +1,56 @@
 const BALL_SPEED = 600;
-const WINNING_SCORE = 20;
+const WINNING_SCORE = 10;
 const SPEED_INCREASE = 15;
+const MAX_SPEED = 800;
+
+// Global variables
+let menuMusic = null;
+
+class LoadingScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'LoadingScene' });
+    }
+
+    preload() {
+        // Load all sound effects
+        this.load.audio('click', 'assets/click.wav');
+        this.load.audio('hit', 'assets/hit.wav');
+        this.load.audio('hover', 'assets/hover.wav');
+        this.load.audio('score', 'assets/score.wav');
+        this.load.audio('music', 'assets/music.mp3');
+    }
+
+    create() {
+        // Start the start menu scene
+        this.scene.start('StartMenu');
+    }
+}
 
 class StartMenu extends Phaser.Scene {
     constructor() {
         super({ key: 'StartMenu' });
     }
 
+    preload() {
+        // Load sound effects
+        this.load.audio('click', 'assets/click.wav');
+        this.load.audio('hover', 'assets/hover.wav');
+    }
+
     create() {
+        // Load sound effects
+        this.clickSound = this.sound.add('click');
+        this.hoverSound = this.sound.add('hover');
+        
+        // Play background music if not already playing
+        if (!menuMusic) {
+            menuMusic = this.sound.add('music', {
+                volume: 0.5,
+                loop: true
+            });
+            menuMusic.play();
+        }
+
         // Title
         this.add.text(config.width / 2, config.height / 4, 'PING PONG', {
             fontSize: '64px',
@@ -27,6 +70,7 @@ class StartMenu extends Phaser.Scene {
 
         playButton.on('pointerover', () => {
             playButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
         });
 
         playButton.on('pointerout', () => {
@@ -34,6 +78,7 @@ class StartMenu extends Phaser.Scene {
         });
 
         playButton.on('pointerdown', () => {
+            this.clickSound.play();
             this.scene.start('GameScene');
         });
 
@@ -48,6 +93,7 @@ class StartMenu extends Phaser.Scene {
 
         highScoresButton.on('pointerover', () => {
             highScoresButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
         });
 
         highScoresButton.on('pointerout', () => {
@@ -55,6 +101,7 @@ class StartMenu extends Phaser.Scene {
         });
 
         highScoresButton.on('pointerdown', () => {
+            this.clickSound.play();
             this.scene.start('HighScores');
         });
     }
@@ -65,7 +112,26 @@ class HighScores extends Phaser.Scene {
         super({ key: 'HighScores' });
     }
 
+    preload() {
+        // Load sound effects
+        this.load.audio('click', 'assets/click.wav');
+        this.load.audio('hover', 'assets/hover.wav');
+    }
+
     create() {
+        // Load sound effects
+        this.clickSound = this.sound.add('click');
+        this.hoverSound = this.sound.add('hover');
+
+        // Ensure music is playing
+        if (!menuMusic) {
+            menuMusic = this.sound.add('music', {
+                volume: 0.5,
+                loop: true
+            });
+            menuMusic.play();
+        }
+
         // Title
         this.add.text(config.width / 2, 50, 'HIGH SCORES', {
             fontSize: '48px',
@@ -104,6 +170,7 @@ class HighScores extends Phaser.Scene {
 
         backButton.on('pointerover', () => {
             backButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
         });
 
         backButton.on('pointerout', () => {
@@ -111,6 +178,7 @@ class HighScores extends Phaser.Scene {
         });
 
         backButton.on('pointerdown', () => {
+            this.clickSound.play();
             this.scene.start('StartMenu');
         });
     }
@@ -132,10 +200,29 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        // No assets to load for this simple game
+        // Load sound effects
+        this.load.audio('click', 'assets/click.wav');
+        this.load.audio('hit', 'assets/hit.wav');
+        this.load.audio('hover', 'assets/hover.wav');
+        this.load.audio('score', 'assets/score.wav');
     }
 
     create() {
+        // Load sound effects
+        this.clickSound = this.sound.add('click');
+        this.hitSound = this.sound.add('hit');
+        this.hoverSound = this.sound.add('hover');
+        this.scoreSound = this.sound.add('score');
+
+        // Ensure music is playing
+        if (!menuMusic) {
+            menuMusic = this.sound.add('music', {
+                volume: 0.5,
+                loop: true
+            });
+            menuMusic.play();
+        }
+
         // Player paddle
         this.player = this.add.rectangle(50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.player, true);
@@ -143,6 +230,10 @@ class GameScene extends Phaser.Scene {
         // AI paddle
         this.ai = this.add.rectangle(config.width - 50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.ai, true);
+
+        // Center line
+        const centerLine = this.add.rectangle(config.width / 2, config.height / 2, 3, config.height - 100, 0xffffff);
+        centerLine.setAlpha(0.75);
 
         // Ball
         this.ball = this.add.rectangle(config.width / 2, config.height / 2, 20, 20, 0xffffff);
@@ -159,21 +250,21 @@ class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         // Score
-        this.scoreText = this.add.text(config.width / 2, 30, '0 : 0', {
+        this.scoreText = this.add.text(80, 30, '0 : 0', {
             fontSize: '32px',
             color: '#fff',
             fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Timer
-        this.timerText = this.add.text(config.width / 2, 70, 'Time: 0s', {
+        this.timerText = this.add.text(config.width - 100, 30, 'Time: 0s', {
             fontSize: '24px',
             color: '#fff',
             fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Speed display
-        this.speedText = this.add.text(config.width / 2, 110, 'Speed: +0%', {
+        this.speedText = this.add.text(config.width - 100, 70, 'Speed: +0%', {
             fontSize: '24px',
             color: '#fff',
             fontFamily: 'monospace'
@@ -210,16 +301,64 @@ class GameScene extends Phaser.Scene {
     resetBall() {
         this.ball.x = config.width / 2;
         this.ball.y = config.height / 2;
-        // Set velocity to move only horizontally
-        this.ball.body.setVelocity(
-            this.currentBallSpeed * this.ballDirection,
-            0
-        );
-        // Reverse direction for next serve
-        this.ballDirection *= -1;
+        // Reset ball color to white
+        this.ball.fillColor = 0xffffff;
+        // Stop the ball
+        this.ball.body.setVelocity(0, 0);
+        // Start countdown
+        this.startCountdown();
+    }
+
+    startCountdown() {
+        const countdownNumbers = ['READY?', 'GO!'];
+        let currentIndex = 0;
+
+        const showNumber = () => {
+            if (currentIndex >= countdownNumbers.length) {
+                // Launch the ball after countdown
+                this.ball.body.setVelocity(
+                    this.currentBallSpeed * this.ballDirection,
+                    0
+                );
+                // Reverse direction for next serve
+                this.ballDirection *= -1;
+                return;
+            }
+
+            const number = countdownNumbers[currentIndex];
+            const text = this.add.text(config.width / 2, config.height / 2, number.toString(), {
+                fontSize: '120px',
+                color: '#fff',
+                fontFamily: 'monospace',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+
+            // Initial scale
+            text.setScale(2);
+            text.setAlpha(1);
+
+            // Animate out
+            this.tweens.add({
+                targets: text,
+                scale: 0.5,
+                alpha: 0,
+                duration: 1000,
+                ease: 'Power2',
+                onComplete: () => {
+                    text.destroy();
+                    currentIndex++;
+                    showNumber();
+                }
+            });
+        };
+
+        showNumber();
     }
 
     ballHitPaddle(ball, paddle) {
+        // Play hit sound
+        this.hitSound.play();
+        
         // Calculate where the ball hit the paddle (0 to 1, where 0.5 is center)
         const hitPosition = (ball.y - (paddle.y - paddle.height/2)) / paddle.height;
         
@@ -285,10 +424,12 @@ class GameScene extends Phaser.Scene {
         if (this.ball.x < 20) {
             this.aiScore++;
             this.updateScore();
+            this.scoreSound.play();
             this.resetBall();
         } else if (this.ball.x > config.width - 20) {
             this.playerScore++;
             this.updateScore();
+            this.scoreSound.play();
             this.resetBall();
         }
 
@@ -417,6 +558,7 @@ class GameScene extends Phaser.Scene {
         
         menuButton.on('pointerover', () => {
             menuButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
         });
 
         menuButton.on('pointerout', () => {
@@ -424,6 +566,7 @@ class GameScene extends Phaser.Scene {
         });
 
         menuButton.on('pointerdown', () => {
+            this.clickSound.play();
             saveScore();
             this.scene.start('StartMenu');
         });
@@ -439,6 +582,7 @@ class GameScene extends Phaser.Scene {
         
         restartButton.on('pointerover', () => {
             restartButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
         });
 
         restartButton.on('pointerout', () => {
@@ -446,6 +590,7 @@ class GameScene extends Phaser.Scene {
         });
 
         restartButton.on('pointerdown', () => {
+            this.clickSound.play();
             saveScore();
             this.scene.restart();
         });
@@ -463,7 +608,7 @@ const config = {
             debug: false
         }
     },
-    scene: [StartMenu, GameScene, HighScores]
+    scene: [LoadingScene, StartMenu, GameScene, HighScores]
 };
 
 const game = new Phaser.Game(config); 
