@@ -13,6 +13,7 @@ export default class GameScene extends Phaser.Scene {
         this.highScores = JSON.parse(localStorage.getItem('pingPongHighScores')) || [];
         this.ballDirection = 1; // 1 for right, -1 for left
         this.currentBallSpeed = BALL_SPEED;
+        this.isPaused = false;
     }
 
     create() {
@@ -60,6 +61,7 @@ export default class GameScene extends Phaser.Scene {
 
         // Input
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
         // Score
         this.scoreText = this.add.text(80, 30, '0 : 0', {
@@ -83,12 +85,104 @@ export default class GameScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Timer event
-        this.time.addEvent({
+        this.timerEvent = this.time.addEvent({
             delay: 1000,
             callback: this.updateTimer,
             callbackScope: this,
             loop: true
         });
+
+        // Create pause menu (initially hidden)
+        this.createPauseMenu();
+    }
+
+    createPauseMenu() {
+        // Create a semi-transparent background
+        this.pauseBg = this.add.rectangle(config.width / 2, config.height / 2, config.width, config.height, 0x000000, 0.7);
+        this.pauseBg.setVisible(false);
+        this.pauseBg.setInteractive(); // Make background interactive to prevent clicks passing through
+
+        // Create pause menu container
+        this.pauseMenu = this.add.container(config.width / 2, config.height / 2);
+        this.pauseMenu.setVisible(false);
+
+        // Pause title
+        const pauseTitle = this.add.text(0, -100, 'PAUSED', {
+            fontSize: '48px',
+            color: '#fff',
+            fontFamily: 'monospace'
+        }).setOrigin(0.5);
+
+        // Resume button
+        const resumeButton = this.add.text(0, 0, 'RESUME', {
+            fontSize: '32px',
+            color: '#fff',
+            fontFamily: 'monospace',
+            backgroundColor: '#444',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        resumeButton.on('pointerover', () => {
+            resumeButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
+        });
+
+        resumeButton.on('pointerout', () => {
+            resumeButton.setStyle({ backgroundColor: '#444' });
+        });
+
+        resumeButton.on('pointerdown', () => {
+            this.clickSound.play();
+            this.togglePause();
+        });
+
+        // Menu button
+        const menuButton = this.add.text(0, 60, 'MAIN MENU', {
+            fontSize: '32px',
+            color: '#fff',
+            fontFamily: 'monospace',
+            backgroundColor: '#444',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        menuButton.on('pointerover', () => {
+            menuButton.setStyle({ backgroundColor: '#666' });
+            this.hoverSound.play();
+        });
+
+        menuButton.on('pointerout', () => {
+            menuButton.setStyle({ backgroundColor: '#444' });
+        });
+
+        menuButton.on('pointerdown', () => {
+            this.clickSound.play();
+            this.scene.start('StartMenu');
+        });
+
+        // Add elements to container
+        this.pauseMenu.add([pauseTitle, resumeButton, menuButton]);
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+        
+        if (this.isPaused) {
+            // Pause the game
+            this.physics.pause();
+            this.timerEvent.paused = true; // Pause the timer
+            this.pauseBg.setVisible(true);
+            this.pauseMenu.setVisible(true);
+            
+            // Ensure the pause menu is on top
+            this.pauseMenu.setDepth(1000);
+            this.pauseBg.setDepth(999);
+        } else {
+            // Resume the game
+            this.physics.resume();
+            this.timerEvent.paused = false; // Resume the timer
+            this.pauseBg.setVisible(false);
+            this.pauseMenu.setVisible(false);
+        }
     }
 
     updateTimer() {
@@ -211,6 +305,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update() {
+        // Check for pause toggle only if game is active
+        if (Phaser.Input.Keyboard.JustDown(this.escKey) && this.gameActive) {
+            this.togglePause();
+        }
+
+        if (this.isPaused) return;
+
         if (!this.gameActive) return;
 
         // Player movement
