@@ -39,17 +39,18 @@ export default class OptionsScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Music Volume
-        this.add.text(config.width / 2 - 150, 150, 'Music Volume:', {
+        const musicVolumeY = 150;
+        this.add.text(config.width / 2 - 200, musicVolumeY, 'MUSIC VOLUME:', {
             ..._.styles.text,
             fontSize: '24px',
         }).setOrigin(0, 0.5);
 
         // Music Volume Slider
-        const musicSlider = this.add.rectangle(config.width / 2 + 50, 150, 200, 20, 0x444444);
+        const musicSlider = this.add.rectangle(config.width / 2, musicVolumeY + 30, 400, 20, 0x444444);
         const musicFill = this.add.rectangle(
-            config.width / 2 + 50 - 100 + (musicVolume * 200),
-            150,
-            musicVolume * 200,
+            config.width / 2 - 200, 
+            musicVolumeY + 30,
+            musicVolume * 400,
             20,
             0xffffff
         );
@@ -57,27 +58,28 @@ export default class OptionsScene extends Phaser.Scene {
 
         // Music Volume Text
         const musicVolumeText = this.add.text(
-            config.width / 2 + 160,
-            150,
+            config.width / 2 + 200,
+            musicVolumeY,
             `${Math.round(musicVolume * 100)}%`,
             {
                 ..._.styles.text,
                 fontSize: '20px',
             }
-        ).setOrigin(0, 0.5);
+        ).setOrigin(1, 0.5);
 
         // SFX Volume
-        this.add.text(config.width / 2 - 150, 200, 'SFX Volume:', {
+        const sfxVolumeY = 220;
+        this.add.text(config.width / 2 - 200, sfxVolumeY, 'SFX VOLUME:', {
             ..._.styles.text,
             fontSize: '24px',
         }).setOrigin(0, 0.5);
 
         // SFX Volume Slider
-        const sfxSlider = this.add.rectangle(config.width / 2 + 50, 200, 200, 20, 0x444444);
+        const sfxSlider = this.add.rectangle(config.width / 2, sfxVolumeY + 30, 400, 20, 0x444444);
         const sfxFill = this.add.rectangle(
-            config.width / 2 + 50 - 100 + (sfxVolume * 200),
-            200,
-            sfxVolume * 200,
+            config.width / 2 - 200,
+            sfxVolumeY + 30,
+            sfxVolume * 400,
             20,
             0xffffff
         );
@@ -85,14 +87,14 @@ export default class OptionsScene extends Phaser.Scene {
 
         // SFX Volume Text
         const sfxVolumeText = this.add.text(
-            config.width / 2 + 160,
-            200,
+            config.width / 2 + 200,
+            sfxVolumeY,
             `${Math.round(sfxVolume * 100)}%`,
             {
                 ..._.styles.text,
                 fontSize: '20px',
             }
-        ).setOrigin(0, 0.5);
+        ).setOrigin(1, 0.5);
 
         // Make sliders interactive
         const makeSliderInteractive = (slider, fill, text, volumeVar) => {
@@ -105,10 +107,8 @@ export default class OptionsScene extends Phaser.Scene {
                 fill.x = slider.x - slider.width/2;
                 text.setText(`${Math.round(volumeVar * 100)}%`);
                 
-                if (!muteVar) {
-                    if (slider === musicSlider) {
-                        menuMusic.setVolume(volumeVar);
-                    }
+                if (slider === musicSlider) {
+                    menuMusic.setVolume(volumeVar);
                 }
             });
 
