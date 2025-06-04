@@ -4,6 +4,7 @@ import StartMenu from './scenes/StartMenu.js';
 import GameScene from './scenes/GameScene.js';
 import HighScores from './scenes/HighScores.js';
 import OptionsScene from './scenes/OptionsScene.js';
+import AudioManager from './AudioManager.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -46,7 +47,7 @@ const _ = {
 
         button.on('pointerover', () => {
             button.setStyle({ backgroundColor: '#666' });
-            scene.hoverSound?.play();
+            scene.audio?.playHover();
         });
 
         button.on('pointerout', () => {
@@ -55,7 +56,7 @@ const _ = {
 
         if (onClick) {
             button.on('pointerdown', () => {
-                scene.clickSound?.play();
+                scene.audio?.playClick();
                 onClick();
             });
         }
@@ -64,28 +65,9 @@ const _ = {
     }
 }; 
 
-let menuMusic = null;
-let musicVolume = 0.5;
-let sfxVolume = 0.5;
-let musicMuted = false;
-let sfxMuted = false;
-
 const game = new Phaser.Game(config);
 
-function setMenuMusic(music) {
-    if (menuMusic) {
-        menuMusic.stop();
-        menuMusic.destroy();
-    }
-    menuMusic = music;
-}
-
 export {
-    menuMusic,
-    musicVolume,
-    sfxVolume,
-    musicMuted,
-    sfxMuted,
     config,
     _,
     BALL_SPEED,
@@ -93,5 +75,5 @@ export {
     WINNING_SCORE,
     MAX_SPEED,
     FONT,
-    setMenuMusic
+    AudioManager
 }; 

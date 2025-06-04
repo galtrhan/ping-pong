@@ -1,10 +1,7 @@
 import {
     config,
     _,
-    menuMusic,
-    setMenuMusic,
-    musicMuted,
-    musicVolume,
+    AudioManager,
     BALL_SPEED,
     SPEED_INCREASE,
     WINNING_SCORE,
@@ -27,24 +24,9 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
-        // Load sound effects
-        this.clickSound = this.sound.add('click');
-        this.hitSound = this.sound.add('hit');
-        this.hoverSound = this.sound.add('hover');
-        this.scoreSound = this.sound.add('score');
-
-        // Ensure music is playing
-        if (!menuMusic) {
-            const music = this.sound.add('music', {
-                volume: musicMuted ? 0 : musicVolume,
-                loop: true
-            });
-            music.play();
-            setMenuMusic(music);
-        } else {
-            // Ensure volume is correct if music was already playing
-            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
-        }
+        // Initialize audio manager
+        this.audio = new AudioManager(this);
+        this.audio.ensureMusicPlaying();
 
         // Player paddle
         this.player = this.add.rectangle(50, config.height / 2, 20, 100, 0xffffff);
@@ -259,7 +241,7 @@ export default class GameScene extends Phaser.Scene {
 
     ballHitPaddle(ball, paddle) {
         // Play hit sound
-        this.hitSound.play();
+        this.audio.playHit();
         
         // Emit particles at the ball's position
         this.hitParticles.explode(10, ball.x, ball.y);
@@ -336,12 +318,12 @@ export default class GameScene extends Phaser.Scene {
         if (this.ball.x < 20) {
             this.aiScore++;
             this.updateScore();
-            this.scoreSound.play();
+            this.audio.playScore();
             this.resetBall();
         } else if (this.ball.x > config.width - 20) {
             this.playerScore++;
             this.updateScore();
-            this.scoreSound.play();
+            this.audio.playScore();
             this.resetBall();
         }
 
@@ -492,6 +474,5 @@ export default class GameScene extends Phaser.Scene {
                 fontSize: '24px'
             }
         );
-
     }
 } 

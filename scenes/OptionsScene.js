@@ -1,12 +1,7 @@
 import {
     config,
     _,
-    menuMusic,
-    setMenuMusic,
-    musicMuted,
-    musicVolume,
-    sfxVolume,
-    sfxMuted,
+    AudioManager
 } from '../game.js';
 
 export default class OptionsScene extends Phaser.Scene {
@@ -15,22 +10,9 @@ export default class OptionsScene extends Phaser.Scene {
     }
 
     create() {
-        // Load sound effects
-        this.clickSound = this.sound.add('click');
-        this.hoverSound = this.sound.add('hover');
-
-        // Ensure music is playing
-        if (!menuMusic) {
-            const music = this.sound.add('music', {
-                volume: musicMuted ? 0 : musicVolume,
-                loop: true
-            });
-            music.play();
-            setMenuMusic(music);
-        } else {
-            // Ensure volume is correct if music was already playing
-            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
-        }
+        // Initialize audio manager
+        this.audio = new AudioManager(this);
+        this.audio.ensureMusicPlaying();
 
         // Title
         this.add.text(config.width / 2, 50, 'OPTIONS', {
@@ -50,7 +32,7 @@ export default class OptionsScene extends Phaser.Scene {
         const musicFill = this.add.rectangle(
             config.width / 2 - 200, 
             musicVolumeY + 30,
-            musicVolume * 400,
+            this.audio.musicVolume * 400,
             20,
             0xffffff
         );
@@ -60,7 +42,7 @@ export default class OptionsScene extends Phaser.Scene {
         const musicVolumeText = this.add.text(
             config.width / 2 + 200,
             musicVolumeY,
-            `${Math.round(musicVolume * 100)}%`,
+            `${Math.round(this.audio.musicVolume * 100)}%`,
             {
                 ..._.styles.text,
                 fontSize: '20px',
@@ -79,7 +61,7 @@ export default class OptionsScene extends Phaser.Scene {
         const sfxFill = this.add.rectangle(
             config.width / 2 - 200,
             sfxVolumeY + 30,
-            sfxVolume * 400,
+            this.audio.sfxVolume * 400,
             20,
             0xffffff
         );
@@ -89,7 +71,7 @@ export default class OptionsScene extends Phaser.Scene {
         const sfxVolumeText = this.add.text(
             config.width / 2 + 200,
             sfxVolumeY,
-            `${Math.round(sfxVolume * 100)}%`,
+            `${Math.round(this.audio.sfxVolume * 100)}%`,
             {
                 ..._.styles.text,
                 fontSize: '20px',
@@ -97,38 +79,42 @@ export default class OptionsScene extends Phaser.Scene {
         ).setOrigin(1, 0.5);
 
         // Make sliders interactive
-        const makeSliderInteractive = (slider, fill, text, volumeVar) => {
+        const makeSliderInteractive = (slider, fill, text, isMusic) => {
             slider.setInteractive();
             
             slider.on('pointerdown', (pointer) => {
                 const newVolume = (pointer.x - slider.x + slider.width/2) / slider.width;
-                volumeVar = Math.max(0, Math.min(1, newVolume));
-                fill.width = volumeVar * slider.width;
+                const volume = Math.max(0, Math.min(1, newVolume));
+                fill.width = volume * slider.width;
                 fill.x = slider.x - slider.width/2;
-                text.setText(`${Math.round(volumeVar * 100)}%`);
+                text.setText(`${Math.round(volume * 100)}%`);
                 
-                if (slider === musicSlider) {
-                    menuMusic.setVolume(volumeVar);
+                if (isMusic) {
+                    this.audio.setMusicVolume(volume);
+                } else {
+                    this.audio.setSFXVolume(volume);
                 }
             });
 
             slider.on('pointermove', (pointer) => {
                 if (pointer.isDown) {
                     const newVolume = (pointer.x - slider.x + slider.width/2) / slider.width;
-                    volumeVar = Math.max(0, Math.min(1, newVolume));
-                    fill.width = volumeVar * slider.width;
+                    const volume = Math.max(0, Math.min(1, newVolume));
+                    fill.width = volume * slider.width;
                     fill.x = slider.x - slider.width/2;
-                    text.setText(`${Math.round(volumeVar * 100)}%`);
+                    text.setText(`${Math.round(volume * 100)}%`);
                     
-                    if (slider === musicSlider) {
-                        menuMusic.setVolume(volumeVar);
+                    if (isMusic) {
+                        this.audio.setMusicVolume(volume);
+                    } else {
+                        this.audio.setSFXVolume(volume);
                     }
                 }
             });
         };
 
-        makeSliderInteractive(musicSlider, musicFill, musicVolumeText, musicVolume);
-        makeSliderInteractive(sfxSlider, sfxFill, sfxVolumeText, sfxVolume);
+        makeSliderInteractive(musicSlider, musicFill, musicVolumeText, true);
+        makeSliderInteractive(sfxSlider, sfxFill, sfxVolumeText, false);
 
         _.createButton(
             this,

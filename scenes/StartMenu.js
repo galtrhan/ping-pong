@@ -1,10 +1,7 @@
 import {
     config,
     _,
-    menuMusic,
-    setMenuMusic,
-    musicMuted,
-    musicVolume,
+    AudioManager
 } from '../game.js';
 
 export default class StartMenu extends Phaser.Scene {
@@ -13,19 +10,9 @@ export default class StartMenu extends Phaser.Scene {
     }
 
     create() {
-        this.clickSound = this.sound.add('click');
-        this.hoverSound = this.sound.add('hover');
-        
-        if (!menuMusic) {
-            const music = this.sound.add('music', {
-                volume: musicMuted ? 0 : musicVolume,
-                loop: true
-            });
-            music.play();
-            setMenuMusic(music);
-        } else {
-            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
-        }
+        // Initialize audio manager
+        this.audio = new AudioManager(this);
+        this.audio.ensureMusicPlaying();
 
         this.add.text(config.width / 2, config.height / 4, 'PING PONG', {
             ... _.styles.text,
@@ -62,6 +49,5 @@ export default class StartMenu extends Phaser.Scene {
                 this.scene.start('OptionsScene');
             }
         );
-
     }
 } 
