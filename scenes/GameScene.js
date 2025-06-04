@@ -1,4 +1,14 @@
-import { menuMusic, musicMuted, musicVolume, config, BALL_SPEED, SPEED_INCREASE, WINNING_SCORE, setMenuMusic } from '../game.js';
+import {
+    config,
+    _,
+    menuMusic,
+    setMenuMusic,
+    musicMuted,
+    musicVolume,
+    BALL_SPEED,
+    SPEED_INCREASE,
+    WINNING_SCORE,
+} from '../game.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -32,8 +42,8 @@ export default class GameScene extends Phaser.Scene {
             music.play();
             setMenuMusic(music);
         } else {
-             // Ensure volume is correct if music was already playing
-             menuMusic.setVolume(musicMuted ? 0 : musicVolume);
+            // Ensure volume is correct if music was already playing
+            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
         }
 
         // Player paddle
@@ -64,24 +74,18 @@ export default class GameScene extends Phaser.Scene {
         this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
         // Score
-        this.scoreText = this.add.text(80, 30, '0 : 0', {
-            fontSize: '32px',
-            color: '#fff',
-            fontFamily: 'monospace'
-        }).setOrigin(0.5);
+        this.scoreText = this.add.text(80, 30, '0 : 0', _.styles.text).setOrigin(0.5);
 
         // Timer
-        this.timerText = this.add.text(config.width - 100, 30, 'Time: 0s', {
+        this.timerText = this.add.text(config.width - 100, 30, 'TIME: 0s', {
+            ..._.styles.text,
             fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Speed display
-        this.speedText = this.add.text(config.width - 100, 70, 'Speed: +0%', {
+        this.speedText = this.add.text(config.width - 100, 70, 'SPEED: +0%', {
+            ..._.styles.text,
             fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Timer event
@@ -94,72 +98,65 @@ export default class GameScene extends Phaser.Scene {
 
         // Create pause menu (initially hidden)
         this.createPauseMenu();
+
+        // Create a small white texture for particles
+        if (!this.textures.exists('pixel')) {
+            const graphics = this.add.graphics()
+                .fillStyle(0xffffff, 1)
+                .fillRect(0, 0, 10, 10)
+                .generateTexture('pixel', 10, 10)
+                .destroy();
+        }
+        this.hitParticles = this.add.particles(0, 0, 'pixel', {
+            frame: 'white',
+            lifespan: 800,
+            speed: { min: 50, max: 150 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            blendMode: 'ADD',
+            frequency: -1
+        });
+        this.hitParticles.setDepth(1);
     }
 
     createPauseMenu() {
         // Create a semi-transparent background
-        this.pauseBg = this.add.rectangle(config.width / 2, config.height / 2, config.width, config.height, 0x000000, 0.7);
-        this.pauseBg.setVisible(false);
-        this.pauseBg.setInteractive(); // Make background interactive to prevent clicks passing through
+        this.pauseBg = this.add.rectangle(config.width / 2, config.height / 2, config.width, config.height, 0x000000, 0.7)
+            .setVisible(false)
+            .setInteractive();
 
         // Create pause menu container
-        this.pauseMenu = this.add.container(config.width / 2, config.height / 2);
-        this.pauseMenu.setVisible(false);
+        this.pauseMenu = this.add.container(config.width / 2, config.height / 2)
+            .setVisible(false);
 
         // Pause title
         const pauseTitle = this.add.text(0, -100, 'PAUSED', {
+            ..._.styles.text,
             fontSize: '48px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Resume button
-        const resumeButton = this.add.text(0, 0, 'RESUME', {
-            fontSize: '32px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const resumeButton = _.createButton(
+            this,
+            0,
+            0,
+            'RESUME',
+            () => {
+                this.togglePause();
+            }
+        );        
 
-        resumeButton.on('pointerover', () => {
-            resumeButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
+        // Main menu button
+        const menuButton = _.createButton(
+            this,
+            0,
+            60, 
+            'MAIN MENU',
+            () => {
+                this.scene.start('StartMenu');
+            }
+        );
 
-        resumeButton.on('pointerout', () => {
-            resumeButton.setStyle({ backgroundColor: '#444' });
-        });
-
-        resumeButton.on('pointerdown', () => {
-            this.clickSound.play();
-            this.togglePause();
-        });
-
-        // Menu button
-        const menuButton = this.add.text(0, 60, 'MAIN MENU', {
-            fontSize: '32px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        menuButton.on('pointerover', () => {
-            menuButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
-
-        menuButton.on('pointerout', () => {
-            menuButton.setStyle({ backgroundColor: '#444' });
-        });
-
-        menuButton.on('pointerdown', () => {
-            this.clickSound.play();
-            this.scene.start('StartMenu');
-        });
-
-        // Add elements to container
         this.pauseMenu.add([pauseTitle, resumeButton, menuButton]);
     }
 
@@ -169,7 +166,7 @@ export default class GameScene extends Phaser.Scene {
         if (this.isPaused) {
             // Pause the game
             this.physics.pause();
-            this.timerEvent.paused = true; // Pause the timer
+            this.timerEvent.paused = true;
             this.pauseBg.setVisible(true);
             this.pauseMenu.setVisible(true);
             
@@ -179,7 +176,7 @@ export default class GameScene extends Phaser.Scene {
         } else {
             // Resume the game
             this.physics.resume();
-            this.timerEvent.paused = false; // Resume the timer
+            this.timerEvent.paused = false;
             this.pauseBg.setVisible(false);
             this.pauseMenu.setVisible(false);
         }
@@ -188,12 +185,12 @@ export default class GameScene extends Phaser.Scene {
     updateTimer() {
         if (this.gameActive) {
             this.gameTimer++;
-            this.timerText.setText(`Time: ${this.gameTimer}s`);
+            this.timerText.setText(`TIME: ${this.gameTimer}s`);
             
             // Increase ball speed
             this.currentBallSpeed += SPEED_INCREASE;
             const speedIncreasePercent = Math.round(((this.currentBallSpeed - BALL_SPEED) / BALL_SPEED) * 100);
-            this.speedText.setText(`Speed: +${speedIncreasePercent}%`);
+            this.speedText.setText(`SPEED: +${speedIncreasePercent}%`);
             
             // Update ball velocity while maintaining direction
             if (this.ball.body.velocity.x !== 0 || this.ball.body.velocity.y !== 0) {
@@ -233,10 +230,9 @@ export default class GameScene extends Phaser.Scene {
 
             const number = countdownNumbers[currentIndex];
             const text = this.add.text(config.width / 2, config.height / 2, number.toString(), {
+                ..._.styles.text,
                 fontSize: '120px',
-                color: '#fff',
-                fontFamily: 'monospace',
-                fontStyle: 'bold'
+                fontStyle: 'bold',
             }).setOrigin(0.5);
 
             // Initial scale
@@ -265,6 +261,9 @@ export default class GameScene extends Phaser.Scene {
         // Play hit sound
         this.hitSound.play();
         
+        // Emit particles at the ball's position
+        this.hitParticles.explode(10, ball.x, ball.y);
+
         // Calculate where the ball hit the paddle (0 to 1, where 0.5 is center)
         const hitPosition = (ball.y - (paddle.y - paddle.height/2)) / paddle.height;
         
@@ -392,19 +391,25 @@ export default class GameScene extends Phaser.Scene {
         const isTop10 = currentRank <= 10;
         
         // Display game over screen
-        const gameOverText = this.add.text(config.width / 2, config.height / 2 - 150, 'Game Over!', {
-            fontSize: '48px',
-            color: '#fff',
-            fontFamily: 'monospace'
-        }).setOrigin(0.5);
+        const gameOverText = this.add.text(
+            config.width / 2,
+            config.height / 2 - 150,
+            'GAME OVER!',
+            {
+                ..._.styles.text,
+                fontSize: '48px',
+            }
+        ).setOrigin(0.5);
         
-        const finalScoreText = this.add.text(config.width / 2, config.height / 2 - 80, 
-            `Final Score: ${this.playerScore} - ${this.aiScore}\nTime: ${this.gameTimer}s\nRank: #${currentRank}`, {
-            fontSize: '32px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            align: 'center'
-        }).setOrigin(0.5);
+        const finalScoreText = this.add.text(
+            config.width / 2,
+            config.height / 2 - 80, 
+            `Final Score: ${this.playerScore} - ${this.aiScore}\nTime: ${this.gameTimer}s\nRank: #${currentRank}`,
+            {
+                ..._.styles.text,
+                align: 'center'
+            }
+        ).setOrigin(0.5);
 
         let nameInput;
         if (isTop10) {
@@ -460,52 +465,33 @@ export default class GameScene extends Phaser.Scene {
             }
         };
 
-        // Add menu button
-        const menuButton = this.add.text(config.width / 2, config.height / 2 + 100, 'Back to Menu', {
-            fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive();
-        
-        menuButton.on('pointerover', () => {
-            menuButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height / 2 + 100,
+            'BACK TO MENU',
+            () => {
+                saveScore();
+                this.scene.start('StartMenu');
+            },
+            {
+                fontSize: '24px',
+            }
+        );
 
-        menuButton.on('pointerout', () => {
-            menuButton.setStyle({ backgroundColor: '#444' });
-        });
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height / 2 + 160,
+            'PLAY AGAIN',
+            () => {
+                saveScore();
+                this.scene.restart();
+            },
+            {
+                fontSize: '24px'
+            }
+        );
 
-        menuButton.on('pointerdown', () => {
-            this.clickSound.play();
-            saveScore();
-            this.scene.start('StartMenu');
-        });
-
-        // Add restart button
-        const restartButton = this.add.text(config.width / 2, config.height / 2 + 160, 'Play Again', {
-            fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive();
-        
-        restartButton.on('pointerover', () => {
-            restartButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
-
-        restartButton.on('pointerout', () => {
-            restartButton.setStyle({ backgroundColor: '#444' });
-        });
-
-        restartButton.on('pointerdown', () => {
-            this.clickSound.play();
-            saveScore();
-            this.scene.restart();
-        });
     }
 } 

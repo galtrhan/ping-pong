@@ -1,4 +1,4 @@
-import { menuMusic, musicMuted, musicVolume, config, setMenuMusic } from '../game.js';
+import { _, menuMusic, musicMuted, musicVolume, config, setMenuMusic } from '../game.js';
 
 export default class HighScores extends Phaser.Scene {
     constructor() {
@@ -19,15 +19,14 @@ export default class HighScores extends Phaser.Scene {
             music.play();
             setMenuMusic(music);
         } else {
-             // Ensure volume is correct if music was already playing
-             menuMusic.setVolume(musicMuted ? 0 : musicVolume);
+            // Ensure volume is correct if music was already playing
+            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
         }
 
         // Title
         this.add.text(config.width / 2, 50, 'HIGH SCORES', {
+            ..._.styles.text,
             fontSize: '48px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Get high scores from localStorage
@@ -35,11 +34,7 @@ export default class HighScores extends Phaser.Scene {
 
         // Display high scores
         if (highScores.length === 0) {
-            this.add.text(config.width / 2, config.height / 2, 'No scores yet!', {
-                fontSize: '32px',
-                color: '#fff',
-                fontFamily: 'monospace'
-            }).setOrigin(0.5);
+            this.add.text(config.width / 2, config.height / 2, 'NO DATA!', _.styles.text).setOrigin(0.5);
         } else {
             // Create table headers
             const headers = ['Rank', 'Name', 'Score', 'Time', 'Date'];
@@ -52,7 +47,7 @@ export default class HighScores extends Phaser.Scene {
                 this.add.text(startX + (index * 100), startY, header, {
                     fontSize: '24px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
             });
 
@@ -64,60 +59,48 @@ export default class HighScores extends Phaser.Scene {
                 this.add.text(startX, y, `${index + 1}.`, {
                     fontSize: '20px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
 
                 // Name
                 this.add.text(startX + 100, y, score.name || 'Player', {
                     fontSize: '20px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
 
                 // Score
                 this.add.text(startX + 200, y, `${score.playerScore} - ${score.aiScore}`, {
                     fontSize: '20px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
 
                 // Time
                 this.add.text(startX + 300, y, `${score.time}s`, {
                     fontSize: '20px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
 
                 // Date
                 this.add.text(startX + 400, y, score.date, {
                     fontSize: '20px',
                     color: '#fff',
-                    fontFamily: 'monospace'
+                    fontFamily: 'kenney-mini'
                 }).setOrigin(0, 0.5);
             });
         }
 
         // Back button
-        const backButton = this.add.text(config.width / 2, config.height - 50, 'Back to Menu', {
-            fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive();
-        
-        backButton.on('pointerover', () => {
-            backButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
-
-        backButton.on('pointerout', () => {
-            backButton.setStyle({ backgroundColor: '#444' });
-        });
-
-        backButton.on('pointerdown', () => {
-            this.clickSound.play();
-            this.scene.start('StartMenu');
-        });
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height - 50,
+            'BACK',
+            () => {
+                this.scene.start('StartMenu');
+            }
+        );
     }
 } 

@@ -1,4 +1,13 @@
-import { menuMusic, musicMuted, musicVolume, sfxVolume, sfxMuted, config, setMenuMusic } from '../game.js';
+import {
+    config,
+    _,
+    menuMusic,
+    setMenuMusic,
+    musicMuted,
+    musicVolume,
+    sfxVolume,
+    sfxMuted,
+} from '../game.js';
 
 export default class OptionsScene extends Phaser.Scene {
     constructor() {
@@ -19,22 +28,20 @@ export default class OptionsScene extends Phaser.Scene {
             music.play();
             setMenuMusic(music);
         } else {
-             // Ensure volume is correct if music was already playing
-             menuMusic.setVolume(musicMuted ? 0 : musicVolume);
+            // Ensure volume is correct if music was already playing
+            menuMusic.setVolume(musicMuted ? 0 : musicVolume);
         }
 
         // Title
         this.add.text(config.width / 2, 50, 'OPTIONS', {
+            ..._.styles.text,
             fontSize: '48px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0.5);
 
         // Music Volume
         this.add.text(config.width / 2 - 150, 150, 'Music Volume:', {
+            ..._.styles.text,
             fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0, 0.5);
 
         // Music Volume Slider
@@ -54,29 +61,15 @@ export default class OptionsScene extends Phaser.Scene {
             150,
             `${Math.round(musicVolume * 100)}%`,
             {
+                ..._.styles.text,
                 fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'monospace'
             }
         ).setOrigin(0, 0.5);
 
-        // Music Mute Button
-        const musicMuteButton = this.add.text(
-            config.width / 2 + 200,
-            150,
-            musicMuted ? '🔇' : '🔊',
-            {
-                fontSize: '24px',
-                color: '#fff',
-                fontFamily: 'monospace'
-            }
-        ).setOrigin(0, 0.5).setInteractive();
-
         // SFX Volume
         this.add.text(config.width / 2 - 150, 200, 'SFX Volume:', {
+            ..._.styles.text,
             fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace'
         }).setOrigin(0, 0.5);
 
         // SFX Volume Slider
@@ -96,26 +89,13 @@ export default class OptionsScene extends Phaser.Scene {
             200,
             `${Math.round(sfxVolume * 100)}%`,
             {
+                ..._.styles.text,
                 fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'monospace'
             }
         ).setOrigin(0, 0.5);
 
-        // SFX Mute Button
-        const sfxMuteButton = this.add.text(
-            config.width / 2 + 200,
-            200,
-            sfxMuted ? '🔇' : '🔊',
-            {
-                fontSize: '24px',
-                color: '#fff',
-                fontFamily: 'monospace'
-            }
-        ).setOrigin(0, 0.5).setInteractive();
-
         // Make sliders interactive
-        const makeSliderInteractive = (slider, fill, text, volumeVar, muteVar, muteButton) => {
+        const makeSliderInteractive = (slider, fill, text, volumeVar) => {
             slider.setInteractive();
             
             slider.on('pointerdown', (pointer) => {
@@ -140,48 +120,24 @@ export default class OptionsScene extends Phaser.Scene {
                     fill.x = slider.x - slider.width/2;
                     text.setText(`${Math.round(volumeVar * 100)}%`);
                     
-                    if (!muteVar) {
-                        if (slider === musicSlider) {
-                            menuMusic.setVolume(volumeVar);
-                        }
+                    if (slider === musicSlider) {
+                        menuMusic.setVolume(volumeVar);
                     }
-                }
-            });
-
-            muteButton.on('pointerdown', () => {
-                muteVar = !muteVar;
-                muteButton.setText(muteVar ? '🔇' : '🔊');
-                
-                if (slider === musicSlider) {
-                    menuMusic.setVolume(muteVar ? 0 : volumeVar);
                 }
             });
         };
 
-        makeSliderInteractive(musicSlider, musicFill, musicVolumeText, musicVolume, musicMuted, musicMuteButton);
-        makeSliderInteractive(sfxSlider, sfxFill, sfxVolumeText, sfxVolume, sfxMuted, sfxMuteButton);
+        makeSliderInteractive(musicSlider, musicFill, musicVolumeText, musicVolume);
+        makeSliderInteractive(sfxSlider, sfxFill, sfxVolumeText, sfxVolume);
 
-        // Back button
-        const backButton = this.add.text(config.width / 2, config.height - 50, 'Back to Menu', {
-            fontSize: '24px',
-            color: '#fff',
-            fontFamily: 'monospace',
-            backgroundColor: '#444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive();
-        
-        backButton.on('pointerover', () => {
-            backButton.setStyle({ backgroundColor: '#666' });
-            this.hoverSound.play();
-        });
-
-        backButton.on('pointerout', () => {
-            backButton.setStyle({ backgroundColor: '#444' });
-        });
-
-        backButton.on('pointerdown', () => {
-            this.clickSound.play();
-            this.scene.start('StartMenu');
-        });
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height - 50,
+            'BACK',
+            () => {
+                this.scene.start('StartMenu');
+            }
+        );
     }
 } 
