@@ -12,7 +12,8 @@ export default class GameScene extends Phaser.Scene {
         super({ key: 'GameScene' });
     }
 
-    init() {
+    init(data) {
+        this.gameMode = data.mode || 'single';
         this.playerScore = 0;
         this.aiScore = 0;
         this.gameTimer = 0;
@@ -32,7 +33,7 @@ export default class GameScene extends Phaser.Scene {
         this.player = this.add.rectangle(50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.player, true);
 
-        // AI paddle
+        // AI/Second player paddle
         this.ai = this.add.rectangle(config.width - 50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.ai, true);
 
@@ -54,6 +55,14 @@ export default class GameScene extends Phaser.Scene {
         // Input
         this.cursors = this.input.keyboard.createCursorKeys();
         this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+        // Player 1 controls (A and Z)
+        this.player1Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.player1Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+
+        // Player 2 controls (K and M)
+        this.player2Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+        this.player2Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
 
         // Score
         this.scoreText = this.add.text(80, 30, '0 : 0', _.styles.text).setOrigin(0.5);
@@ -99,6 +108,16 @@ export default class GameScene extends Phaser.Scene {
             frequency: -1
         });
         this.hitParticles.setDepth(1);
+
+        // Add control instructions
+        const controlsText = this.gameMode === 'single' 
+            ? 'Controls: Arrow Keys (Player 1)'
+            : 'Controls: A/Z (Player 1), K/M (Player 2)';
+        
+        this.add.text(config.width / 2, config.height - 30, controlsText, {
+            ..._.styles.text,
+            fontSize: '16px',
+        }).setOrigin(0.5);
     }
 
     createPauseMenu() {
@@ -295,22 +314,43 @@ export default class GameScene extends Phaser.Scene {
 
         if (!this.gameActive) return;
 
-        // Player movement
-        if (this.cursors.up.isDown) {
-            this.player.y -= 5;
-        } else if (this.cursors.down.isDown) {
-            this.player.y += 5;
+        // Player 1 movement
+        if (this.gameMode === 'single') {
+            // Single player mode - use arrow keys
+            if (this.cursors.up.isDown) {
+                this.player.y -= 5;
+            } else if (this.cursors.down.isDown) {
+                this.player.y += 5;
+            }
+        } else {
+            // Multiplayer mode - use A/Z keys
+            if (this.player1Up.isDown) {
+                this.player.y -= 5;
+            } else if (this.player1Down.isDown) {
+                this.player.y += 5;
+            }
         }
-        // Clamp player paddle
+        // Clamp player 1 paddle
         this.player.y = Phaser.Math.Clamp(this.player.y, this.player.height / 2, config.height - this.player.height / 2);
         this.player.body.updateFromGameObject();
 
-        // AI movement (simple follow)
-        if (this.ball.y < this.ai.y) {
-            this.ai.y -= 4;
-        } else if (this.ball.y > this.ai.y) {
-            this.ai.y += 4;
+        // Player 2/AI movement
+        if (this.gameMode === 'single') {
+            // AI movement (simple follow)
+            if (this.ball.y < this.ai.y) {
+                this.ai.y -= 4;
+            } else if (this.ball.y > this.ai.y) {
+                this.ai.y += 4;
+            }
+        } else {
+            // Player 2 movement (K and M keys)
+            if (this.player2Up.isDown) {
+                this.ai.y -= 5;
+            } else if (this.player2Down.isDown) {
+                this.ai.y += 5;
+            }
         }
+        // Clamp player 2/AI paddle
         this.ai.y = Phaser.Math.Clamp(this.ai.y, this.ai.height / 2, config.height - this.ai.height / 2);
         this.ai.body.updateFromGameObject();
 

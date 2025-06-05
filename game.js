@@ -4,6 +4,7 @@ import StartMenu from './scenes/StartMenu.js';
 import GameScene from './scenes/GameScene.js';
 import HighScores from './scenes/HighScores.js';
 import OptionsScene from './scenes/OptionsScene.js';
+import PlayerSelectScene from './scenes/PlayerSelectScene.js';
 import AudioManager from './AudioManager.js';
 
 const config = {
@@ -17,7 +18,7 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, LoadingScene, StartMenu, GameScene, HighScores, OptionsScene]
+    scene: [BootScene, LoadingScene, StartMenu, GameScene, HighScores, OptionsScene, PlayerSelectScene]
 };
 
 const BALL_SPEED = 300;

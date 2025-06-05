@@ -4,9 +4,9 @@ import {
     AudioManager
 } from '../game.js';
 
-export default class StartMenu extends Phaser.Scene {
+export default class PlayerSelectScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'StartMenu' });
+        super({ key: 'PlayerSelectScene' });
     }
 
     create() {
@@ -14,39 +14,42 @@ export default class StartMenu extends Phaser.Scene {
         this.audio = new AudioManager(this);
         this.audio.ensureMusicPlaying();
 
-        this.add.text(config.width / 2, config.height / 4, 'PING PONG', {
-            ... _.styles.text,
-            fontSize: '64px',
-            fontStyle: 'bold',
+        // Title
+        this.add.text(config.width / 2, config.height / 4, 'SELECT MODE', {
+            ..._.styles.text,
+            fontSize: '48px',
         }).setOrigin(0.5);
 
+        // One Player button
         _.createButton(
             this,
             config.width / 2,
             config.height / 2,
-            'PLAY',
+            'ONE PLAYER',
             () => {
-                this.scene.start('PlayerSelectScene');
-            },
+                this.scene.start('GameScene', { mode: 'single' });
+            }
         );
 
+        // Two Players button
         _.createButton(
             this,
             config.width / 2,
             config.height / 2 + 80,
-            'HIGH SCORES',
+            'TWO PLAYERS',
             () => {
-                this.scene.start('HighScores');
-            },
+                this.scene.start('GameScene', { mode: 'multi' });
+            }
         );
 
+        // Back button
         _.createButton(
             this,
             config.width / 2,
-            config.height / 2 + 160,
-            'OPTIONS',
+            config.height - 50,
+            'BACK',
             () => {
-                this.scene.start('OptionsScene');
+                this.scene.start('StartMenu');
             }
         );
     }
