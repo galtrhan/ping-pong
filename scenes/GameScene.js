@@ -5,6 +5,9 @@ import {
     BALL_SPEED,
     SPEED_INCREASE,
     WINNING_SCORE,
+    MAX_SPEED,
+    PADDLE_SPEED,
+    AI_SPEED,
 } from '../game.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -12,13 +15,35 @@ export default class GameScene extends Phaser.Scene {
         super({ key: 'GameScene' });
     }
 
+    preload() {
+        // Create programmatic textures for particles during preload
+        this.add.graphics()
+            .fillStyle(0xffffff, 1)
+            .fillRect(0, 0, 10, 10)
+            .generateTexture('pixel', 10, 10)
+            .destroy();
+    }
+
     init(data) {
+        // Use scene data management
+        this.registry.set('gameMode', data.mode || 'single');
+        this.registry.set('playerScore', 0);
+        this.registry.set('aiScore', 0);
+        this.registry.set('gameTimer', 0);
+        this.registry.set('gameActive', true);
+        
         this.gameMode = data.mode || 'single';
         this.playerScore = 0;
         this.aiScore = 0;
         this.gameTimer = 0;
         this.gameActive = true;
-        this.highScores = JSON.parse(localStorage.getItem('pingPongHighScores')) || [];
+        
+        try {
+            this.highScores = JSON.parse(localStorage.getItem('pingPongHighScores')) || [];
+        } catch (e) {
+            console.warn('Failed to load high scores from localStorage:', e);
+            this.highScores = [];
+        }
         this.ballDirection = 1; // 1 for right, -1 for left
         this.currentBallSpeed = BALL_SPEED;
         this.isPaused = false;
@@ -29,17 +54,24 @@ export default class GameScene extends Phaser.Scene {
         this.audio = new AudioManager(this);
         this.audio.ensureMusicPlaying();
 
+        // Create groups for better object management
+        this.paddles = this.add.group();
+        this.uiElements = this.add.group();
+
         // Player paddle
         this.player = this.add.rectangle(50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.player, true);
+        this.paddles.add(this.player);
 
         // AI/Second player paddle
         this.ai = this.add.rectangle(config.width - 50, config.height / 2, 20, 100, 0xffffff);
         this.physics.add.existing(this.ai, true);
+        this.paddles.add(this.ai);
 
         // Center line
         const centerLine = this.add.rectangle(config.width / 2, config.height / 2, 3, config.height - 100, 0xffffff);
         centerLine.setAlpha(0.75);
+        this.uiElements.add(centerLine);
 
         // Ball
         this.ball = this.add.rectangle(config.width / 2, config.height / 2, 20, 20, 0xffffff);
@@ -52,32 +84,11 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.collider(this.ball, this.player, this.ballHitPaddle, null, this);
         this.physics.add.collider(this.ball, this.ai, this.ballHitPaddle, null, this);
 
-        // Input
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        // Input setup
+        this.setupInput();
 
-        // Player 1 controls (A and Z)
-        this.player1Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-        this.player1Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
-
-        // Player 2 controls (K and M)
-        this.player2Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
-        this.player2Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
-
-        // Score
-        this.scoreText = this.add.text(80, 30, '0 : 0', _.styles.text).setOrigin(0.5);
-
-        // Timer
-        this.timerText = this.add.text(config.width - 100, 30, 'TIME: 0s', {
-            ..._.styles.text,
-            fontSize: '24px',
-        }).setOrigin(0.5);
-
-        // Speed display
-        this.speedText = this.add.text(config.width - 100, 70, 'SPEED: +0%', {
-            ..._.styles.text,
-            fontSize: '24px',
-        }).setOrigin(0.5);
+        // UI setup
+        this.setupUI();
 
         // Timer event
         this.timerEvent = this.time.addEvent({
@@ -90,14 +101,7 @@ export default class GameScene extends Phaser.Scene {
         // Create pause menu (initially hidden)
         this.createPauseMenu();
 
-        // Create a small white texture for particles
-        if (!this.textures.exists('pixel')) {
-            const graphics = this.add.graphics()
-                .fillStyle(0xffffff, 1)
-                .fillRect(0, 0, 10, 10)
-                .generateTexture('pixel', 10, 10)
-                .destroy();
-        }
+        // Setup particles (now texture exists from preload)
         this.hitParticles = this.add.particles(0, 0, 'pixel', {
             frame: 'white',
             lifespan: 800,
@@ -108,16 +112,51 @@ export default class GameScene extends Phaser.Scene {
             frequency: -1
         });
         this.hitParticles.setDepth(1);
+    }
+
+    setupInput() {
+        // Input
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+        // Player 1 controls (A and Z)
+        this.player1Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.player1Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+
+        // Player 2 controls (K and M)
+        this.player2Up = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+        this.player2Down = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    }
+
+    setupUI() {
+        // Score
+        this.scoreText = this.add.text(80, 30, '0 : 0', _.styles.text).setOrigin(0.5);
+        this.uiElements.add(this.scoreText);
+
+        // Timer
+        this.timerText = this.add.text(config.width - 100, 30, 'TIME: 0s', {
+            ..._.styles.text,
+            fontSize: '24px',
+        }).setOrigin(0.5);
+        this.uiElements.add(this.timerText);
+
+        // Speed display
+        this.speedText = this.add.text(config.width - 100, 70, 'SPEED: +0%', {
+            ..._.styles.text,
+            fontSize: '24px',
+        }).setOrigin(0.5);
+        this.uiElements.add(this.speedText);
 
         // Add control instructions
         const controlsText = this.gameMode === 'single' 
             ? 'Controls: Arrow Keys (Player 1)'
             : 'Controls: A/Z (Player 1), K/M (Player 2)';
         
-        this.add.text(config.width / 2, config.height - 30, controlsText, {
+        const controlsLabel = this.add.text(config.width / 2, config.height - 30, controlsText, {
             ..._.styles.text,
             fontSize: '16px',
         }).setOrigin(0.5);
+        this.uiElements.add(controlsLabel);
     }
 
     createPauseMenu() {
@@ -154,7 +193,10 @@ export default class GameScene extends Phaser.Scene {
             60, 
             'MAIN MENU',
             () => {
-                this.scene.start('StartMenu');
+                this.scene.transition({
+                    target: 'StartMenu',
+                    duration: 300
+                });
             }
         );
 
@@ -186,18 +228,21 @@ export default class GameScene extends Phaser.Scene {
     updateTimer() {
         if (this.gameActive) {
             this.gameTimer++;
+            this.registry.set('gameTimer', this.gameTimer);
             this.timerText.setText(`TIME: ${this.gameTimer}s`);
             
-            // Increase ball speed
-            this.currentBallSpeed += SPEED_INCREASE;
-            const speedIncreasePercent = Math.round(((this.currentBallSpeed - BALL_SPEED) / BALL_SPEED) * 100);
-            this.speedText.setText(`SPEED: +${speedIncreasePercent}%`);
-            
-            // Update ball velocity while maintaining direction
-            if (this.ball.body.velocity.x !== 0 || this.ball.body.velocity.y !== 0) {
-                const angle = Math.atan2(this.ball.body.velocity.y, this.ball.body.velocity.x);
-                this.ball.body.velocity.x = Math.cos(angle) * this.currentBallSpeed;
-                this.ball.body.velocity.y = Math.sin(angle) * this.currentBallSpeed;
+            // Increase ball speed with maximum limit
+            if (this.currentBallSpeed < MAX_SPEED) {
+                this.currentBallSpeed = Math.min(this.currentBallSpeed + SPEED_INCREASE, MAX_SPEED);
+                const speedIncreasePercent = Math.round(((this.currentBallSpeed - BALL_SPEED) / BALL_SPEED) * 100);
+                this.speedText.setText(`SPEED: +${speedIncreasePercent}%`);
+                
+                // Update ball velocity while maintaining direction (only if ball is moving)
+                if (this.ball.body.velocity.x !== 0 || this.ball.body.velocity.y !== 0) {
+                    const angle = Math.atan2(this.ball.body.velocity.y, this.ball.body.velocity.x);
+                    this.ball.body.velocity.x = Math.cos(angle) * this.currentBallSpeed;
+                    this.ball.body.velocity.y = Math.sin(angle) * this.currentBallSpeed;
+                }
             }
         }
     }
@@ -238,19 +283,22 @@ export default class GameScene extends Phaser.Scene {
 
             // Initial scale
             text.setScale(2);
-            text.setAlpha(1);
 
-            // Animate out
+            // Animate the countdown number
             this.tweens.add({
                 targets: text,
-                scale: 0.5,
+                scale: 1,
                 alpha: 0,
-                duration: 1000,
+                duration: 800,
                 ease: 'Power2',
                 onComplete: () => {
                     text.destroy();
                     currentIndex++;
-                    showNumber();
+                    if (currentIndex < countdownNumbers.length) {
+                        setTimeout(showNumber, 200);
+                    } else {
+                        setTimeout(showNumber, 500);
+                    }
                 }
             });
         };
@@ -305,29 +353,36 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update() {
-        // Check for pause toggle only if game is active
-        if (Phaser.Input.Keyboard.JustDown(this.escKey) && this.gameActive) {
+        if (this.isPaused || !this.gameActive) return;
+
+        this.handleInput();
+        this.updatePaddles();
+        this.checkScoring();
+        this.checkGameOver();
+    }
+
+    handleInput() {
+        // Check for pause toggle
+        if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
             this.togglePause();
         }
+    }
 
-        if (this.isPaused) return;
-
-        if (!this.gameActive) return;
-
+    updatePaddles() {
         // Player 1 movement
         if (this.gameMode === 'single') {
             // Single player mode - use arrow keys
             if (this.cursors.up.isDown) {
-                this.player.y -= 5;
+                this.player.y -= PADDLE_SPEED;
             } else if (this.cursors.down.isDown) {
-                this.player.y += 5;
+                this.player.y += PADDLE_SPEED;
             }
         } else {
             // Multiplayer mode - use A/Z keys
             if (this.player1Up.isDown) {
-                this.player.y -= 5;
+                this.player.y -= PADDLE_SPEED;
             } else if (this.player1Down.isDown) {
-                this.player.y += 5;
+                this.player.y += PADDLE_SPEED;
             }
         }
         // Clamp player 1 paddle
@@ -338,35 +393,41 @@ export default class GameScene extends Phaser.Scene {
         if (this.gameMode === 'single') {
             // AI movement (simple follow)
             if (this.ball.y < this.ai.y) {
-                this.ai.y -= 4;
+                this.ai.y -= AI_SPEED;
             } else if (this.ball.y > this.ai.y) {
-                this.ai.y += 4;
+                this.ai.y += AI_SPEED;
             }
         } else {
             // Player 2 movement (K and M keys)
             if (this.player2Up.isDown) {
-                this.ai.y -= 5;
+                this.ai.y -= PADDLE_SPEED;
             } else if (this.player2Down.isDown) {
-                this.ai.y += 5;
+                this.ai.y += PADDLE_SPEED;
             }
         }
         // Clamp player 2/AI paddle
         this.ai.y = Phaser.Math.Clamp(this.ai.y, this.ai.height / 2, config.height - this.ai.height / 2);
         this.ai.body.updateFromGameObject();
+    }
 
+    checkScoring() {
         // Check for scoring
         if (this.ball.x < 20) {
             this.aiScore++;
+            this.registry.set('aiScore', this.aiScore);
             this.updateScore();
             this.audio.playScore();
             this.resetBall();
         } else if (this.ball.x > config.width - 20) {
             this.playerScore++;
+            this.registry.set('playerScore', this.playerScore);
             this.updateScore();
             this.audio.playScore();
             this.resetBall();
         }
+    }
 
+    checkGameOver() {
         // Check for game over
         if (this.playerScore >= WINNING_SCORE || this.aiScore >= WINNING_SCORE) {
             this.gameOver();
@@ -379,6 +440,7 @@ export default class GameScene extends Phaser.Scene {
 
     gameOver() {
         this.gameActive = false;
+        this.registry.set('gameActive', false);
         
         // Add current score to high scores
         const newScore = {
@@ -439,7 +501,12 @@ export default class GameScene extends Phaser.Scene {
             nameInput = document.createElement('input');
             nameInput.type = 'text';
             nameInput.placeholder = 'Enter your name';
-            nameInput.value = localStorage.getItem('lastPlayerName') || '';
+            try {
+                nameInput.value = localStorage.getItem('lastPlayerName') || '';
+            } catch (e) {
+                console.warn('Failed to load last player name:', e);
+                nameInput.value = '';
+            }
             nameInput.style.position = 'absolute';
             nameInput.style.left = '50%';
             nameInput.style.top = '50%';
@@ -449,16 +516,23 @@ export default class GameScene extends Phaser.Scene {
             nameInput.style.width = '200px';
             nameInput.style.textAlign = 'center';
             document.body.appendChild(nameInput);
+            
+            // Store reference for cleanup
+            this.currentNameInput = nameInput;
         }
 
         const saveScore = () => {
-            if (isTop10) {
-                // Update the score with the entered name
-                const playerName = nameInput.value.trim() || 'Player';
+            if (isTop10 && nameInput && nameInput.parentNode) {
+                // Update the score with the entered name (sanitized)
+                const playerName = (nameInput.value.trim() || 'Player').replace(/[<>]/g, '');
                 newScore.name = playerName;
                 
                 // Save the name for next time
-                localStorage.setItem('lastPlayerName', playerName);
+                try {
+                    localStorage.setItem('lastPlayerName', playerName);
+                } catch (e) {
+                    console.warn('Failed to save player name:', e);
+                }
                 
                 // Remove the old score and add the new one with the name
                 this.highScores = this.highScores.filter(score => 
@@ -480,39 +554,93 @@ export default class GameScene extends Phaser.Scene {
                 this.highScores = this.highScores.slice(0, 10);
                 
                 // Save to localStorage
-                localStorage.setItem('pingPongHighScores', JSON.stringify(this.highScores));
+                try {
+                    localStorage.setItem('pingPongHighScores', JSON.stringify(this.highScores));
+                } catch (e) {
+                    console.warn('Failed to save high scores:', e);
+                }
                 
-                // Remove the input field
-                document.body.removeChild(nameInput);
+                // Safely remove the input field
+                this.cleanupNameInput();
             }
         };
 
         _.createButton(
             this,
             config.width / 2,
-            config.height / 2 + 100,
-            'BACK TO MENU',
+            config.height / 2 + 60,
+            'SAVE & CONTINUE',
             () => {
                 saveScore();
-                this.scene.start('StartMenu');
-            },
-            {
-                fontSize: '24px',
+                this.scene.transition({
+                    target: 'HighScores',
+                    duration: 300
+                });
             }
         );
 
         _.createButton(
             this,
             config.width / 2,
-            config.height / 2 + 160,
+            config.height / 2 + 140,
             'PLAY AGAIN',
             () => {
                 saveScore();
-                this.scene.restart();
-            },
-            {
-                fontSize: '24px'
+                this.scene.transition({
+                    target: 'GameScene',
+                    duration: 300,
+                    data: { mode: this.gameMode }
+                });
             }
         );
+
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height / 2 + 220,
+            'MAIN MENU',
+            () => {
+                saveScore();
+                this.scene.transition({
+                    target: 'StartMenu',
+                    duration: 300
+                });
+            }
+        );
+    }
+
+    cleanupNameInput() {
+        if (this.currentNameInput && this.currentNameInput.parentNode) {
+            try {
+                document.body.removeChild(this.currentNameInput);
+            } catch (e) {
+                console.warn('Input element already removed:', e);
+            }
+            this.currentNameInput = null;
+        }
+    }
+
+    shutdown() {
+        // Cleanup when scene ends
+        if (this.timerEvent) {
+            this.timerEvent.destroy();
+            this.timerEvent = null;
+        }
+        
+        // Clean up DOM elements
+        this.cleanupNameInput();
+        
+        // Clean up particles
+        if (this.hitParticles) {
+            this.hitParticles.destroy();
+        }
+        
+        // Clean up groups
+        if (this.paddles) {
+            this.paddles.destroy(true);
+        }
+        if (this.uiElements) {
+            this.uiElements.destroy(true);
+        }
     }
 } 

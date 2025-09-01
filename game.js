@@ -21,10 +21,13 @@ const config = {
     scene: [BootScene, LoadingScene, StartMenu, GameScene, HighScores, OptionsScene, PlayerSelectScene]
 };
 
-const BALL_SPEED = 300;
-const SPEED_INCREASE = 5;
-const WINNING_SCORE = 5;
-const MAX_SPEED = 800;
+/** Game configuration constants */
+const BALL_SPEED = 300;        // Initial ball speed in pixels/second
+const SPEED_INCREASE = 5;      // Speed increase per second
+const WINNING_SCORE = 5;       // Points needed to win
+const MAX_SPEED = 800;         // Maximum ball speed
+const PADDLE_SPEED = 5;        // Player paddle movement speed
+const AI_SPEED = 4;            // AI paddle movement speed (slightly slower for balance)
 
 const FONT = 'kenney-mini';
 
@@ -75,6 +78,8 @@ export {
     SPEED_INCREASE,
     WINNING_SCORE,
     MAX_SPEED,
+    PADDLE_SPEED,
+    AI_SPEED,
     FONT,
     AudioManager
 }; 

@@ -26,7 +26,10 @@ export default class StartMenu extends Phaser.Scene {
             config.height / 2,
             'PLAY',
             () => {
-                this.scene.start('PlayerSelectScene');
+                this.scene.transition({
+                    target: 'PlayerSelectScene',
+                    duration: 300
+                });
             },
         );
 
@@ -36,7 +39,10 @@ export default class StartMenu extends Phaser.Scene {
             config.height / 2 + 80,
             'HIGH SCORES',
             () => {
-                this.scene.start('HighScores');
+                this.scene.transition({
+                    target: 'HighScores',
+                    duration: 300
+                });
             },
         );
 
@@ -46,7 +52,10 @@ export default class StartMenu extends Phaser.Scene {
             config.height / 2 + 160,
             'OPTIONS',
             () => {
-                this.scene.start('OptionsScene');
+                this.scene.transition({
+                    target: 'OptionsScene',
+                    duration: 300
+                });
             }
         );
     }

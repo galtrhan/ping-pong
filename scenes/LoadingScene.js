@@ -1,4 +1,4 @@
-import { config, _ } from '../game.js';
+import { config, _, FONT } from '../game.js';
 
 export default class LoadingScene extends Phaser.Scene {
     constructor() {
@@ -6,37 +6,101 @@ export default class LoadingScene extends Phaser.Scene {
     }
 
     preload() {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-        const loadingText = this.add.text(width / 2, height / 2 - 50, 'LOADING...', _.styles.text).setOrigin(0.5);
-        const progressBox = this.add.rectangle(width / 2, height / 2 + 50, 320, 50, 0x222222).setOrigin(0.5);
-        const progressBar = this.add.rectangle(width / 2 - 160, height / 2 + 50, 0, 50, 0xffffff).setOrigin(0, 0.5);
-        const progressText = this.add.text(width / 2, height / 2 + 50, '0%', {
-            ..._.styles.text,
-            fontSize: '18px',
-        }).setOrigin(0.5);
+        // Create loading bar background
+        const loadingBarBg = this.add.rectangle(
+            config.width / 2, 
+            config.height / 2, 
+            400, 
+            50, 
+            0x333333
+        );
+        
+        // Create loading bar fill
+        const loadingBar = this.add.rectangle(
+            config.width / 2 - 200, 
+            config.height / 2, 
+            0, 
+            46, 
+            0x00ff00
+        );
+        loadingBar.setOrigin(0, 0.5);
 
+        // Loading text
+        const loadingText = this.add.text(
+            config.width / 2, 
+            config.height / 2 - 100, 
+            'Loading Assets...', 
+            {
+                ..._.styles.text,
+                fontSize: '32px'
+            }
+        ).setOrigin(0.5);
+
+        // Percentage text
+        const percentText = this.add.text(
+            config.width / 2, 
+            config.height / 2 + 100, 
+            '0%', 
+            {
+                ..._.styles.text,
+                fontSize: '24px'
+            }
+        ).setOrigin(0.5);
+
+        // Listen for loading progress
         this.load.on('progress', (value) => {
-            progressBar.width = 320 * value;
-            progressText.setText(parseInt(value * 100) + '%');
+            // Update loading bar
+            loadingBar.width = 400 * value;
+            
+            // Update percentage text
+            percentText.setText(Math.round(value * 100) + '%');
         });
 
+        // Listen for individual file loads
+        this.load.on('fileprogress', (file) => {
+            loadingText.setText('Loading: ' + file.key);
+        });
+
+        // When loading is complete
         this.load.on('complete', () => {
-            progressBar.destroy();
-            progressBox.destroy();
-            progressText.destroy();
-            loadingText.destroy();
+            loadingText.setText('Loading Complete!');
+            
+            // Transition to StartMenu after a brief delay
+            this.time.delayedCall(500, () => {
+                this.scene.transition({
+                    target: 'StartMenu',
+                    duration: 500
+                });
+            });
         });
 
-        // Load all sound effects
-        this.load.audio('click', 'assets/click.wav');
-        this.load.audio('hit', 'assets/hit.wav');
-        this.load.audio('hover', 'assets/hover.wav');
-        this.load.audio('score', 'assets/score.wav');
-        this.load.audio('music', 'assets/music.mp3');
+        // Load audio assets (you'll need to add these files to your assets folder)
+        // For now, creating silent audio as placeholders
+        this.createSilentAudio('click');
+        this.createSilentAudio('hover');
+        this.createSilentAudio('hit');
+        this.createSilentAudio('score');
+        this.createSilentAudio('music');
+    }
+
+    createSilentAudio(key) {
+        // Create a minimal silent audio buffer as placeholder
+        // In a real game, you'd load actual audio files like:
+        // this.load.audio(key, ['assets/audio/' + key + '.mp3', 'assets/audio/' + key + '.ogg']);
+        
+        // For now, we'll create silent audio to prevent errors
+        const audioContext = this.sound.context;
+        if (audioContext) {
+            const buffer = audioContext.createBuffer(1, 1, 22050);
+            this.cache.audio.add(key, buffer);
+        } else {
+            // Fallback for when Web Audio isn't available
+            console.warn(`Audio not available for ${key}, using silent placeholder`);
+        }
     }
 
     create() {
-        this.scene.start('StartMenu');
+        // This will run after preload is complete
+        // Any additional setup can go here
     }
 } 

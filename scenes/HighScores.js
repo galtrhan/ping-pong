@@ -16,8 +16,13 @@ export default class HighScores extends Phaser.Scene {
             fontSize: '48px',
         }).setOrigin(0.5);
 
-        // Get high scores from localStorage
-        const highScores = JSON.parse(localStorage.getItem('pingPongHighScores')) || [];
+        // Get high scores from localStorage with error handling
+        let highScores = [];
+        try {
+            highScores = JSON.parse(localStorage.getItem('pingPongHighScores')) || [];
+        } catch (e) {
+            console.warn('Failed to load high scores:', e);
+        }
 
         // Display high scores
         const startX = config.width / 2 - 200;
@@ -50,45 +55,53 @@ export default class HighScores extends Phaser.Scene {
             fontSize: '24px',
         }).setOrigin(0, 0.5);
 
-        // Display scores
-        highScores.forEach((score, index) => {
-            const y = startY + (index + 1) * rowHeight;
-            
-            // Rank
-            this.add.text(startX, y, `${index + 1}.`, {
-                fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'kenney-mini'
-            }).setOrigin(0, 0.5);
+        // Display scores or "No scores yet" message
+        if (highScores.length === 0) {
+            this.add.text(config.width / 2, startY + 100, 'No high scores yet!\nPlay a game to set a record.', {
+                ..._.styles.text,
+                fontSize: '24px',
+                align: 'center'
+            }).setOrigin(0.5);
+        } else {
+            highScores.forEach((score, index) => {
+                const y = startY + (index + 1) * rowHeight;
+                
+                // Rank
+                this.add.text(startX, y, `${index + 1}.`, {
+                    fontSize: '20px',
+                    color: '#fff',
+                    fontFamily: 'kenney-mini'
+                }).setOrigin(0, 0.5);
 
-            // Name
-            this.add.text(startX + 100, y, score.name || 'Player', {
-                fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'kenney-mini'
-            }).setOrigin(0, 0.5);
+                // Name
+                this.add.text(startX + 100, y, score.name || 'Player', {
+                    fontSize: '20px',
+                    color: '#fff',
+                    fontFamily: 'kenney-mini'
+                }).setOrigin(0, 0.5);
 
-            // Score
-            this.add.text(startX + 200, y, `${score.playerScore} - ${score.aiScore}`, {
-                fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'kenney-mini'
-            }).setOrigin(0, 0.5);
+                // Score
+                this.add.text(startX + 200, y, `${score.playerScore} - ${score.aiScore}`, {
+                    fontSize: '20px',
+                    color: '#fff',
+                    fontFamily: 'kenney-mini'
+                }).setOrigin(0, 0.5);
 
-            // Time
-            this.add.text(startX + 300, y, `${score.time}s`, {
-                fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'kenney-mini'
-            }).setOrigin(0, 0.5);
+                // Time
+                this.add.text(startX + 300, y, `${score.time}s`, {
+                    fontSize: '20px',
+                    color: '#fff',
+                    fontFamily: 'kenney-mini'
+                }).setOrigin(0, 0.5);
 
-            // Date
-            this.add.text(startX + 400, y, score.date, {
-                fontSize: '20px',
-                color: '#fff',
-                fontFamily: 'kenney-mini'
-            }).setOrigin(0, 0.5);
-        });
+                // Date
+                this.add.text(startX + 400, y, score.date, {
+                    fontSize: '20px',
+                    color: '#fff',
+                    fontFamily: 'kenney-mini'
+                }).setOrigin(0, 0.5);
+            });
+        }
 
         // Back button
         _.createButton(
@@ -97,8 +110,39 @@ export default class HighScores extends Phaser.Scene {
             config.height - 50,
             'BACK',
             () => {
-                this.scene.start('StartMenu');
+                this.scene.transition({
+                    target: 'StartMenu',
+                    duration: 300
+                });
             }
         );
+
+        // Clear scores button (for development/testing)
+        _.createButton(
+            this,
+            config.width / 2,
+            config.height - 100,
+            'CLEAR SCORES',
+            () => {
+                try {
+                    localStorage.removeItem('pingPongHighScores');
+                    this.scene.transition({
+                        target: 'HighScores',
+                        duration: 300
+                    });
+                } catch (e) {
+                    console.warn('Failed to clear high scores:', e);
+                }
+            },
+            {
+                fontSize: '18px',
+                backgroundColor: '#800000'
+            }
+        );
+    }
+
+    shutdown() {
+        // Cleanup when scene ends
+        // Any cleanup specific to high scores scene can go here
     }
 } 

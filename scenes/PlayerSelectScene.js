@@ -27,7 +27,11 @@ export default class PlayerSelectScene extends Phaser.Scene {
             config.height / 2,
             'ONE PLAYER',
             () => {
-                this.scene.start('GameScene', { mode: 'single' });
+                this.scene.transition({
+                    target: 'GameScene',
+                    duration: 300,
+                    data: { mode: 'single' }
+                });
             }
         );
 
@@ -38,7 +42,11 @@ export default class PlayerSelectScene extends Phaser.Scene {
             config.height / 2 + 80,
             'TWO PLAYERS',
             () => {
-                this.scene.start('GameScene', { mode: 'multi' });
+                this.scene.transition({
+                    target: 'GameScene',
+                    duration: 300,
+                    data: { mode: 'multi' }
+                });
             }
         );
 
@@ -49,7 +57,10 @@ export default class PlayerSelectScene extends Phaser.Scene {
             config.height - 50,
             'BACK',
             () => {
-                this.scene.start('StartMenu');
+                this.scene.transition({
+                    target: 'StartMenu',
+                    duration: 300
+                });
             }
         );
     }

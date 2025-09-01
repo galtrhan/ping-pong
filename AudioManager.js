@@ -3,6 +3,10 @@ class AudioManager {
         if (AudioManager.instance) {
             // If an instance exists, just update the scene reference
             AudioManager.instance.scene = scene;
+            // Re-initialize sounds if they don't exist for this scene
+            if (!AudioManager.instance.clickSound || !scene.sound.get('click')) {
+                AudioManager.instance.initializeSounds(scene);
+            }
             return AudioManager.instance;
         }
 
@@ -13,17 +17,25 @@ class AudioManager {
         this.musicMuted = false;
         this.sfxMuted = false;
         
-        // Load sound effects
-        this.clickSound = scene.sound.add('click');
-        this.hoverSound = scene.sound.add('hover');
-        this.hitSound = scene.sound.add('hit');
-        this.scoreSound = scene.sound.add('score');
+        this.initializeSounds(scene);
         
         // Set initial volumes
         this.updateVolumes();
 
         // Store the instance
         AudioManager.instance = this;
+    }
+    
+    initializeSounds(scene) {
+        // Load sound effects with error handling
+        try {
+            this.clickSound = scene.sound.add('click');
+            this.hoverSound = scene.sound.add('hover');
+            this.hitSound = scene.sound.add('hit');
+            this.scoreSound = scene.sound.add('score');
+        } catch (e) {
+            console.warn('Failed to initialize some sounds:', e);
+        }
     }
     
     updateVolumes() {
