@@ -6,7 +6,7 @@ on:
       itch_user:
         description: "Your itch.io username"
         required: true
-        default: ${{ secrets.ITCH_IO_USERNAME }}
+        default: ""
       itch_game:
         description: "Your itch.io game name (the URL part)"
         required: true
