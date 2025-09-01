@@ -45,7 +45,7 @@ This guide explains how to set up automatic publishing to itch.io using GitHub A
 4. Fill in the parameters:
    - **itch_user**: Your itch.io username
    - **itch_game**: Your game's URL name (e.g., "ping-pong")
-   - **version_name**: Optional version identifier
+   - **version_name**: Version identifier (defaults to latest git tag)
    - **channel**: Usually "html" for web games
 
 ## Workflow Parameters Explained
@@ -53,7 +53,10 @@ This guide explains how to set up automatic publishing to itch.io using GitHub A
 - **itch_user**: Your itch.io username (appears in your profile URL)
 - **itch_game**: The game identifier from your project URL
   - If your game URL is `https://username.itch.io/my-game`, then use `my-game`
-- **version_name**: Optional version string (e.g., "v1.0.0", "alpha-1")
+- **version_name**: Version string (e.g., "v1.0.0", "alpha-1")
+  - Defaults to "latest" which automatically uses your most recent git tag
+  - Leave as "latest" or empty to use the latest tag from your repository
+  - Or enter a custom version name
 - **channel**: The upload channel:
   - `html` - For web games that run in browser
   - `windows` - For Windows executables
@@ -92,5 +95,7 @@ If your itch.io page will be `https://johndoe.itch.io/ping-pong-game`, then:
 
 - You can run this workflow multiple times to update your game
 - Each upload will create a new build on itch.io
+- The workflow automatically detects your latest git tag for versioning
 - Use meaningful version names to track your releases
+- Create git tags before publishing for automatic version detection: `git tag v1.0.3 && git push origin v1.0.3`
 - The workflow also saves build artifacts in GitHub for 7 days

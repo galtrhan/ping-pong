@@ -4,21 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       itch_user:
-        description: 'Your itch.io username'
+        description: "Your itch.io username"
         required: true
-        default: 'your-username'
+        default: ${{ secrets.ITCH_IO_USERNAME }}
       itch_game:
-        description: 'Your itch.io game name (the URL part)'
+        description: "Your itch.io game name (the URL part)"
         required: true
-        default: 'ping-pong'
+        default: "ping-pong"
       version_name:
-        description: 'Version name for this upload'
+        description: "Version name for this upload"
         required: false
-        default: ''
+        default: "latest"
       channel:
         description: 'Itch.io channel (usually "html" for web games)'
         required: true
-        default: 'html'
+        default: "html"
         type: choice
         options:
           - html
@@ -36,12 +36,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -84,8 +93,15 @@ jobs:
           BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
         run: |
           VERSION_FLAG=""
-          if [ -n "${{ github.event.inputs.version_name }}" ]; then
-            VERSION_FLAG="--userversion=${{ github.event.inputs.version_name }}"
+          VERSION_NAME="${{ github.event.inputs.version_name }}"
+
+          # Use latest tag if version_name is 'latest' or empty
+          if [ "$VERSION_NAME" = "latest" ] || [ -z "$VERSION_NAME" ]; then
+            VERSION_NAME="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          fi
+
+          if [ -n "$VERSION_NAME" ]; then
+            VERSION_FLAG="--userversion=$VERSION_NAME"
           fi
 
           ./butler push itch-build/ ${{ github.event.inputs.itch_user }}/${{ github.event.inputs.itch_game }}:${{ github.event.inputs.channel }} $VERSION_FLAG
