@@ -11,6 +11,10 @@ on:
         required: true
         default: "v1.0.0"
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -52,10 +56,7 @@ jobs:
           fi
 
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_tag.outputs.tag_name }}
           name: Ping Pong Game ${{ steps.get_tag.outputs.tag_name }}
@@ -77,9 +78,9 @@ jobs:
             Built with Phaser 3 🚀
           draft: false
           prerelease: false
-          files: |
-            game.zip
+          files: game.zip
           generate_release_notes: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
