@@ -1,0 +1,96 @@
+name: Build Game
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build game package
+      run: |
+        chmod +x deploy.sh
+        ./deploy.sh
+
+    - name: Verify build output
+      run: |
+        if [ ! -f "game.zip" ]; then
+          echo "Error: game.zip was not created"
+          exit 1
+        fi
+        echo "Build successful! Created game.zip"
+        ls -la game.zip
+
+    - name: Get tag name
+      id: get_tag
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_tag.outputs.tag_name }}
+        release_name: Ping Pong Game ${{ steps.get_tag.outputs.tag_name }}
+        body: |
+          ## Ping Pong Game Release ${{ steps.get_tag.outputs.tag_name }}
+
+          🎮 **Ready to play!** Download the game archive and extract it to play locally.
+
+          ### What's included:
+          - Complete game files
+          - All assets and sounds
+          - Phaser 3 runtime
+
+          ### How to play:
+          1. Download and extract `ping-pong-game.zip`
+          2. Open `index.html` in your web browser
+          3. Enjoy the game!
+
+          Built with Phaser 3 🚀
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./game.zip
+        asset_name: ping-pong-game.zip
+        asset_content_type: application/zip
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: game-build-${{ steps.get_tag.outputs.tag_name }}
+        path: game.zip
+        retention-days: 30

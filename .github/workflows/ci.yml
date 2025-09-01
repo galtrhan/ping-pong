@@ -1,0 +1,88 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build game package
+      run: |
+        chmod +x deploy.sh
+        ./deploy.sh
+
+    - name: Verify build output
+      run: |
+        if [ ! -f "game.zip" ]; then
+          echo "Error: game.zip was not created"
+          exit 1
+        fi
+        echo "Build successful! Created game.zip"
+        ls -la game.zip
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: game-build-${{ github.sha }}
+        path: game.zip
+        retention-days: 7
+
+    - name: Test game files
+      run: |
+        # Create a test directory
+        mkdir test_extract
+
+        # Extract the zip to test
+        unzip game.zip -d test_extract
+
+        # Verify required files exist
+        echo "Checking for required files..."
+        ls -la test_extract/
+
+        # Check that main files exist
+        if [ ! -f "test_extract/index.html" ]; then
+          echo "Error: index.html not found in package"
+          exit 1
+        fi
+
+        if [ ! -f "test_extract/game.js" ]; then
+          echo "Error: game.js not found in package"
+          exit 1
+        fi
+
+        if [ ! -d "test_extract/assets" ]; then
+          echo "Error: assets directory not found in package"
+          exit 1
+        fi
+
+        if [ ! -d "test_extract/scenes" ]; then
+          echo "Error: scenes directory not found in package"
+          exit 1
+        fi
+
+        if [ ! -f "test_extract/node_modules/phaser/dist/phaser.min.js" ]; then
+          echo "Error: phaser.min.js not found in package"
+          exit 1
+        fi
+
+        echo "All required files found in package ✅"
+
+        # Clean up
+        rm -rf test_extract
