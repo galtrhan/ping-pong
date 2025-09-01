@@ -1,0 +1,98 @@
+name: Publish to Itch.io
+
+on:
+  workflow_dispatch:
+    inputs:
+      itch_user:
+        description: 'Your itch.io username'
+        required: true
+        default: 'your-username'
+      itch_game:
+        description: 'Your itch.io game name (the URL part)'
+        required: true
+        default: 'ping-pong'
+      version_name:
+        description: 'Version name for this upload'
+        required: false
+        default: ''
+      channel:
+        description: 'Itch.io channel (usually "html" for web games)'
+        required: true
+        default: 'html'
+        type: choice
+        options:
+          - html
+          - windows
+          - mac
+          - linux
+
+permissions:
+  contents: read
+
+jobs:
+  publish-to-itch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build game package
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh
+
+      - name: Verify build output
+        run: |
+          if [ ! -f "game.zip" ]; then
+            echo "Error: game.zip was not created"
+            exit 1
+          fi
+          echo "Build successful! Created game.zip"
+          ls -la game.zip
+
+      - name: Extract game files for itch.io
+        run: |
+          mkdir -p itch-build
+          unzip game.zip -d itch-build/
+          ls -la itch-build/
+
+      - name: Setup Butler (itch.io CLI)
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Login to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
+        run: |
+          ./butler login
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
+        run: |
+          VERSION_FLAG=""
+          if [ -n "${{ github.event.inputs.version_name }}" ]; then
+            VERSION_FLAG="--userversion=${{ github.event.inputs.version_name }}"
+          fi
+
+          ./butler push itch-build/ ${{ github.event.inputs.itch_user }}/${{ github.event.inputs.itch_game }}:${{ github.event.inputs.channel }} $VERSION_FLAG
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: itch-build-${{ github.run_number }}
+          path: itch-build/
+          retention-days: 7
