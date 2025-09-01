@@ -604,22 +604,36 @@ export default class GameScene extends Phaser.Scene {
       nameInput.style.fontSize = "20px";
       nameInput.style.width = "200px";
       nameInput.style.textAlign = "center";
+      nameInput.style.zIndex = "10000";
+      nameInput.style.border = "2px solid black";
+      nameInput.style.borderRadius = "5px";
+      nameInput.style.backgroundColor = "white";
+      nameInput.style.color = "black";
+      nameInput.style.outline = "none";
+      nameInput.style.fontFamily = "kenney-mini, monospace";
+      nameInput.style.fontWeight = "normal";
       document.body.appendChild(nameInput);
 
-      // Focus the input and disable game keyboard input
+      // Focus the input and prevent event propagation
       nameInput.focus();
-      this.input.keyboard.enabled = false;
 
-      // Re-enable keyboard input when input loses focus or on enter
-      nameInput.addEventListener("blur", () => {
-        this.input.keyboard.enabled = true;
-      });
-
+      // Prevent Phaser from capturing keydown events
       nameInput.addEventListener("keydown", (e) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         if (e.key === "Enter") {
           nameInput.blur();
-          this.input.keyboard.enabled = true;
         }
+      });
+
+      nameInput.addEventListener("keypress", (e) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      });
+
+      nameInput.addEventListener("keyup", (e) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
       });
 
       // Store reference for cleanup
@@ -738,8 +752,7 @@ export default class GameScene extends Phaser.Scene {
   cleanupNameInput() {
     if (this.currentNameInput && this.currentNameInput.parentNode) {
       try {
-        // Re-enable keyboard input before cleanup
-        this.input.keyboard.enabled = true;
+        // No need to restore keys with the new approach
         document.body.removeChild(this.currentNameInput);
       } catch (e) {
         console.warn("Input element already removed:", e);
