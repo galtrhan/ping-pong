@@ -72,13 +72,12 @@ export default class LoadingScene extends Phaser.Scene {
       });
     });
 
-    // Load audio assets (you'll need to add these files to your assets folder)
-    // For now, creating silent audio as placeholders
-    this.createSilentAudio("click");
-    this.createSilentAudio("hover");
-    this.createSilentAudio("hit");
-    this.createSilentAudio("score");
-    this.createSilentAudio("music");
+    // Load audio assets
+    this.load.audio("click", "assets/click.wav");
+    this.load.audio("hover", "assets/hover.wav");
+    this.load.audio("hit", "assets/hit.wav");
+    this.load.audio("score", "assets/score.wav");
+    this.load.audio("music", "assets/music.mp3");
   }
 
   create() {
@@ -94,21 +93,5 @@ export default class LoadingScene extends Phaser.Scene {
 
     // This will run after preload is complete
     // Any additional setup can go here
-  }
-
-  createSilentAudio(key) {
-    // Create a minimal silent audio buffer as placeholder
-    // In a real game, you'd load actual audio files like:
-    // this.load.audio(key, ['assets/audio/' + key + '.mp3', 'assets/audio/' + key + '.ogg']);
-
-    // For now, we'll create silent audio to prevent errors
-    const audioContext = this.sound.context;
-    if (audioContext) {
-      const buffer = audioContext.createBuffer(1, 1, 22050);
-      this.cache.audio.add(key, buffer);
-    } else {
-      // Fallback for when Web Audio isn't available
-      console.warn(`Audio not available for ${key}, using silent placeholder`);
-    }
   }
 }

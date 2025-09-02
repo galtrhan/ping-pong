@@ -18,7 +18,10 @@ export default class StartMenu extends Phaser.Scene {
 
     // Initialize audio manager
     this.audio = new AudioManager(this);
-    this.audio.ensureMusicPlaying();
+
+    // Handle audio unlock for browser autoplay policy
+    this.audioUnlocked = false;
+    this.unlockAudio();
 
     this.add
       .text(config.width / 2, config.height / 4, "PING PONG", {
@@ -72,5 +75,45 @@ export default class StartMenu extends Phaser.Scene {
         });
       },
     );
+  }
+
+  unlockAudio() {
+    // Create an invisible button that covers the whole screen to unlock audio
+    const unlockButton = this.add
+      .rectangle(0, 0, config.width * 2, config.height * 2, 0x000000, 0)
+      .setOrigin(0)
+      .setInteractive({ useHandCursor: true });
+
+    // Add instruction text
+    const instructionText = this.add
+      .text(
+        config.width / 2,
+        config.height - 100,
+        "Click anywhere to enable audio",
+        {
+          ..._.styles.text,
+          fontSize: "18px",
+          alpha: 0.7,
+        },
+      )
+      .setOrigin(0.5);
+
+    // Handle the first user interaction
+    unlockButton.once("pointerdown", () => {
+      if (!this.audioUnlocked) {
+        this.audioUnlocked = true;
+
+        // Try to start music
+        try {
+          this.audio.ensureMusicPlaying();
+        } catch (e) {
+          console.log("Audio unlock attempted:", e);
+        }
+
+        // Remove the unlock elements
+        unlockButton.destroy();
+        instructionText.destroy();
+      }
+    });
   }
 }
