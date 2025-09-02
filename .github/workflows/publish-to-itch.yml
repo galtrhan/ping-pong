@@ -80,6 +80,12 @@ jobs:
         run: |
           ./butler login
 
+      - name: Debug target path
+        run: |
+          echo "Target will be: ${{ secrets.ITCH_IO_USERNAME }}/${{ secrets.ITCH_GAME }}:html5"
+          echo "Version: ${{ steps.get_version.outputs.version_name }}"
+          echo "Checking if game exists..."
+
       - name: Push to itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
