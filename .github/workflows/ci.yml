@@ -2,87 +2,101 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Build game package
-      run: |
-        chmod +x deploy.sh
-        ./deploy.sh
+      - name: Build game package
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh
 
-    - name: Verify build output
-      run: |
-        if [ ! -f "game.zip" ]; then
-          echo "Error: game.zip was not created"
-          exit 1
-        fi
-        echo "Build successful! Created game.zip"
-        ls -la game.zip
+      - name: Verify build output
+        run: |
+          if [ ! -f "game.zip" ]; then
+            echo "Error: game.zip was not created"
+            exit 1
+          fi
+          echo "Build successful! Created game.zip"
+          ls -la game.zip
 
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: game-build-${{ github.sha }}
-        path: game.zip
-        retention-days: 7
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-build-${{ github.sha }}
+          path: game.zip
+          retention-days: 7
 
-    - name: Test game files
-      run: |
-        # Create a test directory
-        mkdir test_extract
+      - name: Test game package structure
+        run: |
+          # Create a test directory
+          mkdir test_extract
 
-        # Extract the zip to test
-        unzip game.zip -d test_extract
+          # Extract the zip to test
+          unzip game.zip -d test_extract
 
-        # Verify required files exist
-        echo "Checking for required files..."
-        ls -la test_extract/
+          # Verify required files exist
+          echo "Checking package structure..."
+          ls -la test_extract/
 
-        # Check that main files exist
-        if [ ! -f "test_extract/index.html" ]; then
-          echo "Error: index.html not found in package"
-          exit 1
-        fi
+          # Check that main files exist
+          if [ ! -f "test_extract/index.html" ]; then
+            echo "Error: index.html not found in package"
+            exit 1
+          fi
 
-        if [ ! -f "test_extract/game.js" ]; then
-          echo "Error: game.js not found in package"
-          exit 1
-        fi
+          if [ ! -f "test_extract/game.js" ]; then
+            echo "Error: game.js not found in package"
+            exit 1
+          fi
 
-        if [ ! -d "test_extract/assets" ]; then
-          echo "Error: assets directory not found in package"
-          exit 1
-        fi
+          if [ ! -d "test_extract/assets" ]; then
+            echo "Error: assets directory not found in package"
+            exit 1
+          fi
 
-        if [ ! -d "test_extract/scenes" ]; then
-          echo "Error: scenes directory not found in package"
-          exit 1
-        fi
+          if [ ! -d "test_extract/scenes" ]; then
+            echo "Error: scenes directory not found in package"
+            exit 1
+          fi
 
-        if [ ! -f "test_extract/node_modules/phaser/dist/phaser.min.js" ]; then
-          echo "Error: phaser.min.js not found in package"
-          exit 1
-        fi
+          # Check for flattened phaser structure (itch.io compatible)
+          if [ ! -f "test_extract/phaser.min.js" ]; then
+            echo "Error: phaser.min.js not found in root of package"
+            exit 1
+          fi
 
-        echo "All required files found in package ✅"
+          # Verify HTML references flattened phaser path
+          if ! grep -q "phaser.min.js" test_extract/index.html; then
+            echo "Error: index.html doesn't reference flattened phaser.min.js"
+            exit 1
+          fi
 
-        # Clean up
-        rm -rf test_extract
+          # Make sure old nested structure is not present
+          if [ -d "test_extract/node_modules" ]; then
+            echo "Error: Found nested node_modules structure (should be flattened)"
+            exit 1
+          fi
+
+          echo "Package structure verified ✅"
+          echo "Package is ready for both local play and itch.io upload"
+
+          # Clean up
+          rm -rf test_extract

@@ -1,33 +1,18 @@
 name: Publish to Itch.io
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
-      itch_user:
-        description: "Your itch.io username"
-        required: true
-        default: ""
-      itch_game:
-        description: "Your itch.io game name (the URL part)"
-        required: true
-        default: "ping-pong"
       version_name:
         description: "Version name for this upload"
         required: false
         default: "latest"
-      channel:
-        description: 'Itch.io channel (usually "html" for web games)'
-        required: true
-        default: "html"
-        type: choice
-        options:
-          - html
-          - windows
-          - mac
-          - linux
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish-to-itch:
@@ -39,12 +24,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get latest tag
-        id: get_latest_tag
+      - name: Get version name
+        id: get_version
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Latest tag: $LATEST_TAG"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION_NAME=${GITHUB_REF#refs/tags/}
+          else
+            VERSION_NAME="${{ github.event.inputs.version_name }}"
+            if [ "$VERSION_NAME" = "latest" ] || [ -z "$VERSION_NAME" ]; then
+              VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            fi
+          fi
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION_NAME"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -92,23 +84,49 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.ITCH_IO_API_KEY }}
         run: |
-          VERSION_FLAG=""
-          VERSION_NAME="${{ github.event.inputs.version_name }}"
+          ./butler push itch-build/ ${{ secrets.ITCH_IO_USERNAME }}/${{ secrets.ITCH_GAME }}:html5 --userversion=${{ steps.get_version.outputs.version_name }}
 
-          # Use latest tag if version_name is 'latest' or empty
-          if [ "$VERSION_NAME" = "latest" ] || [ -z "$VERSION_NAME" ]; then
-            VERSION_NAME="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          fi
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version_name }}
+          name: Ping Pong Game ${{ steps.get_version.outputs.version_name }}
+          body: |
+            ## Ping Pong Game Release ${{ steps.get_version.outputs.version_name }}
 
-          if [ -n "$VERSION_NAME" ]; then
-            VERSION_FLAG="--userversion=$VERSION_NAME"
-          fi
+            🎮 **Ready to play!** This release has been automatically deployed to itch.io
 
-          ./butler push itch-build/ ${{ github.event.inputs.itch_user }}/${{ github.event.inputs.itch_game }}:${{ github.event.inputs.channel }} $VERSION_FLAG
+            ### Play the game:
+            🕹️ **[Play on Itch.io](https://{{ secrets.ITCH_IO_USERNAME }}.itch.io/{{ secrets.ITCH_GAME }})**
+
+            ### What's included:
+            - Complete game files with optimized structure
+            - All assets and sounds
+            - Phaser 3 runtime (flattened structure)
+
+            ### Or download for local play:
+            1. Download `ping-pong-game.zip`
+            2. Extract and open `index.html` in your browser
+            3. Enjoy the game!
+
+            ### 🚀 Automated Deployment
+            - Automatically uploaded to itch.io
+            - Set as HTML5 playable game
+            - Version tagged as ${{ steps.get_version.outputs.version_name }}
+
+            Built with Phaser 3 🚀
+          draft: false
+          prerelease: false
+          files: game.zip
+          generate_release_notes: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: itch-build-${{ github.run_number }}
-          path: itch-build/
-          retention-days: 7
+          name: itch-build-${{ steps.get_version.outputs.version_name }}
+          path: |
+            game.zip
+            itch-build/
+          retention-days: 30

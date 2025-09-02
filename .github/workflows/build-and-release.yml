@@ -1,9 +1,6 @@
-name: Build Game
+name: Build Game (Manual GitHub Release)
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag_name:
@@ -49,31 +46,35 @@ jobs:
       - name: Get tag name
         id: get_tag
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
-          fi
+          echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_tag.outputs.tag_name }}
-          name: Ping Pong Game ${{ steps.get_tag.outputs.tag_name }}
+          name: Ping Pong Game ${{ steps.get_tag.outputs.tag_name }} (Manual Release)
           body: |
-            ## Ping Pong Game Release ${{ steps.get_tag.outputs.tag_name }}
+            ## Ping Pong Game Release ${{ steps.get_tag.outputs.tag_name }} (Manual GitHub Release)
 
-            🎮 **Ready to play!** Download the game archive and extract it to play locally.
+            🎮 **Manual release!** This is a GitHub-only release for manual downloads.
 
             ### What's included:
-            - Complete game files
+            - Complete game files with optimized structure
             - All assets and sounds
-            - Phaser 3 runtime
+            - Phaser 3 runtime (flattened structure)
 
-            ### How to play:
+            ### How to play locally:
             1. Download and extract `ping-pong-game.zip`
             2. Open `index.html` in your web browser
             3. Enjoy the game!
+
+            ### For manual itch.io upload:
+            1. Download `ping-pong-game.zip`
+            2. Upload to itch.io as HTML project
+            3. Set "Kind of project" to "HTML"
+            4. Check "This file will be played in the browser"
+
+            **💡 Tip:** For automatic itch.io deployment, use git tags instead: `git tag v1.0.0 && git push origin v1.0.0`
 
             Built with Phaser 3 🚀
           draft: false
