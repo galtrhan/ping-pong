@@ -41,11 +41,11 @@ const _ = {
     },
     createButton: (scene, x, y, text, onClick = null, style = {}) => {
         const button = scene.add.text(x, y, text, {
-                ..._.styles.text,
-                backgroundColor: '#444',
-                padding: { x: 20, top: 5, bottom: 15 },
-                ...style
-            })
+            ..._.styles.text,
+            backgroundColor: '#444',
+            padding: { x: 20, top: 5, bottom: 15 },
+            ...style
+        })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true });
 
@@ -67,7 +67,7 @@ const _ = {
 
         return button;
     }
-}; 
+};
 
 const game = new Phaser.Game(config);
 
