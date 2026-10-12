@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-12
+
+### Changed
+
+- Canvas size increased from 800x600 to 960x720, keeping the 4:3 aspect ratio. The logical space, minimum size, and game container minimum all follow the new dimensions.
+
 ## [0.3.1] - 2026-10-12
 
 ### Changed

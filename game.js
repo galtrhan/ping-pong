@@ -9,13 +9,13 @@ import AudioManager from './AudioManager.js';
 
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: 960,
+    height: 720,
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         parent: 'game',
-        min: { width: 800, height: 600 },
+        min: { width: 960, height: 720 },
     },
     physics: {
         default: 'arcade',
