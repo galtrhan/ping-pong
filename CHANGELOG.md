@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-12
+
+### Changed
+
+- The canvas now scales to fill the available window while keeping the 800x600 aspect ratio, holding the current 800x600 size as a hard minimum. Scenes still render in the fixed 800x600 logical space; the browser window is the only thing that changes.
+- The page background is black so the letterbox area blends in, and the border moved from the canvas to the outer game container at the viewport edge.
+
 ## [0.3.0] - 2026-10-12
 
 ### Added
@@ -76,6 +83,7 @@ First tracked release. Covers all development after the initial commit.
 - Deprecated Cursor game development guidelines.
 - Obsolete project files.
 
+[0.3.1]: https://github.com/galtrhan/ping-pong/releases/tag/v0.3.1
 [0.3.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.3.0
 [0.2.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.2.0
 [0.1.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.1.0
