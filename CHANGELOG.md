@@ -1,0 +1,68 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2026-10-12
+
+Codebase simplification pass: less duplication, dead code removed, behavior unchanged.
+
+### Added
+
+- `scenes/BaseScene.js` with shared `fadeIn` and `goTo` helpers; every scene now extends it.
+- `CHANGELOG.md` and a `## Versioning` section in the README.
+
+### Changed
+
+- Standardized the project version in `package.json` and `package-lock.json` (previously `1.0.0`, inconsistent with the git tags).
+- Collapsed `AudioManager` to a sounds map with a single `play(key)` entry point.
+- Rewrote `GameScene.gameOver` (single sort plus rank lookup) and simplified the hit-angle, scoring, and countdown logic.
+- Simplified `HighScores` rendering into column-driven loops.
+- Updated README controls to match the code (A/Z and K/M in co-op).
+
+### Removed
+
+- Write-only `registry` state and the unused `FONT` export in `game.js`.
+- No-op scene groups and empty `shutdown` handlers.
+
+## [0.1.0] - 2026-02-02
+
+First tracked release. Covers all development after the initial commit.
+
+### Added
+
+- Gameplay: top-down ping pong with dynamic deflection angles based on paddle hit position.
+- Progressive difficulty: ball speed starts at 300 units/s, grows 5 units/s, capped at 800.
+- Co-op mode for two players plus single-player mode against a simple tracking AI.
+- Match win at 5 points; per-match timer and live speed percentage readout.
+- Scene flow: `BootScene`, `LoadingScene`, `StartMenu`, `PlayerSelectScene`, `GameScene`, `OptionsScene`, `HighScores`.
+- Pause screen (ESC) with resume and main-menu actions.
+- Options screen with music/SFX volume sliders and mute toggles, persisted per session.
+- High-score system: top 10 with player names and dates, stored in `localStorage`.
+- Dedicated `AudioManager` for background music and click/hover/hit/score effects.
+- Custom `kenney-mini` web font loaded through WebFont.
+- Scene transitions with camera fades.
+- `deploy.sh` packaging and a Phaser-flattened layout for itch.io uploads.
+- CI/CD: build/release workflow and itch.io publish workflow; committed `package-lock.json`.
+
+### Changed
+
+- Co-op controls: Player 1 uses A/Z, Player 2 uses K/M; single-player uses arrow keys.
+- Refactored scattered audio handling into the audio manager.
+- Flattened Phaser into the deploy root for itch.io compatibility.
+
+### Fixed
+
+- Options screen control placement.
+- Name-input styling and keyboard event handling.
+- GitHub Actions permissions and release creation; invalid secrets reference.
+- itch.io version auto-detection from the latest git tag.
+
+### Removed
+
+- Deprecated Cursor game development guidelines.
+- Obsolete project files.
+
+[0.2.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.2.0
+[0.1.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.1.0

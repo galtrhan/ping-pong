@@ -2,6 +2,8 @@
 
 A modern take on the classic ping pong game, built with Phaser 3. This top-down arcade experience features updated gameplay mechanics, refined constants, and a robust scene management system.
 
+**Version:** 0.2.0 · See [CHANGELOG.md](CHANGELOG.md) for the release history.
+
 ## Features
 
 - Top-down 2D gameplay with refined mechanics
@@ -14,8 +16,8 @@ A modern take on the classic ping pong game, built with Phaser 3. This top-down 
 
 ## How to Play
 
-1. Use the **Up** and **Down** arrow keys to move Player 1's paddle.
-2. In co-op mode, Player 2 uses the **W** and **S** keys to move their paddle.
+1. In single-player mode, use the **Up** and **Down** arrow keys to move Player 1's paddle.
+2. In co-op mode, Player 1 uses **A**/**Z** and Player 2 uses **K**/**M**.
 3. Deflect the ball with your paddle to keep it in play.
 4. Exploit ball angle dynamics:
    - Center hits result in primarily horizontal returns.
@@ -64,6 +66,7 @@ The angle at which the ball deflects off the paddle is determined by the hit pos
 
 The game is organized into multiple scenes to streamline gameplay and enhance user experience:
 
+- **BaseScene:** Shared helpers for camera fades and scene transitions; every scene extends it.
 - **BootScene:** Initializes game settings and assets.
 - **LoadingScene:** Preloads assets and displays a loading screen.
 - **StartMenu:** Main menu offering play, high scores, options, and co-op mode.
@@ -95,14 +98,15 @@ The game is organized into multiple scenes to streamline gameplay and enhance us
   - **↓** - Move paddle down
 
 ### Co-op Mode (Two Players)
-- **Player 1:** 
-  - **↑** - Move paddle up
-  - **↓** - Move paddle down
+- **Player 1:**
+  - **A** - Move paddle up
+  - **Z** - Move paddle down
 - **Player 2:**
-  - **W** - Move paddle up
-  - **S** - Move paddle down
+  - **K** - Move paddle up
+  - **M** - Move paddle down
 
 Additionally:
+- **ESC** - Pause or resume
 - **Enter** - Confirm input (e.g., name entry)
 - **Click** - Menu navigation
 
@@ -118,8 +122,12 @@ Additionally:
 
 The source is organized into distinct modules and scenes:
 - Core game constants and configuration are defined in `game.js`.
-- Scenes are located under the `/scenes` directory and include BootScene, LoadingScene, StartMenu, GameScene, OptionsScene, PlayerSelectScene, and HighScores.
+- Scenes are located under the `/scenes` directory and include BaseScene, BootScene, LoadingScene, StartMenu, PlayerSelectScene, GameScene, OptionsScene, and HighScores.
 - An Audio Manager (`AudioManager.js`) handles sound effects for UI interactions.
+
+## Versioning
+
+The project version lives in `package.json`. The current version is **0.2.0**. Releases are tagged in git as `vX.Y.Z`, and the release workflows read the version from those tags. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## License
 

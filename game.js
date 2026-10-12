@@ -29,8 +29,6 @@ const MAX_SPEED = 800;         // Maximum ball speed
 const PADDLE_SPEED = 5;        // Player paddle movement speed
 const AI_SPEED = 4;            // AI paddle movement speed (slightly slower for balance)
 
-const FONT = 'kenney-mini';
-
 const _ = {
     styles: {
         text: {
@@ -51,7 +49,7 @@ const _ = {
 
         button.on('pointerover', () => {
             button.setStyle({ backgroundColor: '#666' });
-            scene.audio?.playHover();
+            scene.audio?.play('hover');
         });
 
         button.on('pointerout', () => {
@@ -60,7 +58,7 @@ const _ = {
 
         if (onClick) {
             button.on('pointerdown', () => {
-                scene.audio?.playClick();
+                scene.audio?.play('click');
                 onClick();
             });
         }
@@ -69,7 +67,7 @@ const _ = {
     }
 };
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config);
 
 export {
     config,
@@ -80,6 +78,5 @@ export {
     MAX_SPEED,
     PADDLE_SPEED,
     AI_SPEED,
-    FONT,
     AudioManager
 }; 
