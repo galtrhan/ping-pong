@@ -1,6 +1,8 @@
 // BootScene for custom web font loading and initial setup
 
-export default class BootScene extends Phaser.Scene {
+import BaseScene from "./BaseScene.js";
+
+export default class BootScene extends BaseScene {
     constructor() {
         super({ key: "BootScene" });
     }
@@ -51,11 +53,11 @@ export default class BootScene extends Phaser.Scene {
                     urls: ["assets/Kenney Mini Square.ttf"],
                 },
                 active: () => {
-                    this.transitionToLoadingScene();
+                    this.goTo("LoadingScene");
                 },
                 inactive: () => {
                     console.warn("Font failed to load, using fallback");
-                    this.transitionToLoadingScene();
+                    this.goTo("LoadingScene");
                 },
                 timeout: 5000, // 5 second timeout
             });
@@ -63,18 +65,7 @@ export default class BootScene extends Phaser.Scene {
             console.warn(
                 "WebFont library failed to load, proceeding without custom font",
             );
-            this.transitionToLoadingScene();
+            this.goTo("LoadingScene");
         }
-    }
-
-    transitionToLoadingScene() {
-        this.scene.transition({
-            target: "LoadingScene",
-            duration: 300,
-            moveAbove: true,
-            onUpdate: (progress) => {
-                this.cameras.main.setAlpha(1 - progress);
-            },
-        });
     }
 }

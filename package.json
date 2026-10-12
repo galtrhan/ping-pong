@@ -1,6 +1,6 @@
 {
     "name": "phaser-ping-pong",
-    "version": "1.0.0",
+    "version": "0.2.0",
     "description": "A simple top-down ping pong game using Phaser",
     "main": "game.js",
     "scripts": {
