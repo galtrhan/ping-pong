@@ -28,6 +28,11 @@ const WINNING_SCORE = 5;       // Points needed to win
 const MAX_SPEED = 800;         // Maximum ball speed
 const PADDLE_SPEED = 5;        // Player paddle movement speed
 const AI_SPEED = 4;            // AI paddle movement speed (slightly slower for balance)
+const CHARGE_MAX = 6;          // Charge segments needed to fill a paddle
+const CHARGE_CENTER = 1;       // Charge gained when the ball hits the paddle center
+const CHARGE_SIDE = 2;         // Charge gained when the ball hits a paddle edge
+const CHARGE_SCORE = 3;        // Charge gained by the scorer of a point
+const BOOST_FACTOR = 2;        // Ball speed multiplier for a charged hit
 
 const _ = {
     styles: {
@@ -78,5 +83,10 @@ export {
     MAX_SPEED,
     PADDLE_SPEED,
     AI_SPEED,
+    CHARGE_MAX,
+    CHARGE_CENTER,
+    CHARGE_SIDE,
+    CHARGE_SCORE,
+    BOOST_FACTOR,
     AudioManager
 }; 

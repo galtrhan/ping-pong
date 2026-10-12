@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-12
+
+### Added
+
+- Charge-shot mechanic: each paddle fills a six-segment charge meter drawn on the paddle, glowing when full.
+- Center hits add 1/6 charge, edge hits add 2/6; arming with the action key fires the next hit at double ball speed and resets the charge.
+- Deflecting a charged ball auto-fills and spends the deflecting paddle's charge, chaining charged returns.
+- Scoring a point grants the scorer 3/6 charge.
+- Player 1 arms with **Space**, co-op Player 2 arms with **L**; the AI builds and fires charge shots on its own.
+- Charged shots tint the ball and leave a particle trail until the next hit or point.
+- `CHARGE_MAX`, `CHARGE_CENTER`, `CHARGE_SIDE`, `CHARGE_SCORE`, and `BOOST_FACTOR` constants in `game.js`.
+
 ## [0.2.0] - 2026-10-12
 
 Codebase simplification pass: less duplication, dead code removed, behavior unchanged.
@@ -64,5 +76,6 @@ First tracked release. Covers all development after the initial commit.
 - Deprecated Cursor game development guidelines.
 - Obsolete project files.
 
+[0.3.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.3.0
 [0.2.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.2.0
 [0.1.0]: https://github.com/galtrhan/ping-pong/releases/tag/v0.1.0

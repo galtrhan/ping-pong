@@ -2,7 +2,7 @@
 
 A modern take on the classic ping pong game, built with Phaser 3. This top-down arcade experience features updated gameplay mechanics, refined constants, and a robust scene management system.
 
-**Version:** 0.2.0 · See [CHANGELOG.md](CHANGELOG.md) for the release history.
+**Version:** 0.3.0 · See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
 ## Features
 
@@ -13,6 +13,7 @@ A modern take on the classic ping pong game, built with Phaser 3. This top-down 
 - High score system saving the top 10 scores with player names
 - Clean, modern UI with multiple scenes including menus and options
 - Co-op mode for two players with dedicated controls
+- Charge meter per paddle: build charge with center/edge hits, then fire a double-speed shot
 
 ## How to Play
 
@@ -23,7 +24,8 @@ A modern take on the classic ping pong game, built with Phaser 3. This top-down 
    - Center hits result in primarily horizontal returns.
    - Edge hits produce steeper angles.
 5. The ball accelerates over time. Stay alert as the game pace increases.
-6. The game ends when a player reaches 5 points.
+6. Build charge by returning the ball, then unleash a double-speed shot (see [Charge Shot](#charge-shot)).
+7. The game ends when a player reaches 5 points.
 
 ## Game Mechanics
 
@@ -62,6 +64,25 @@ The angle at which the ball deflects off the paddle is determined by the hit pos
 - Hits closer to the edges produce more dramatic directional changes.
 - After striking a paddle, the ball always moves towards the opponent's side.
 
+### Charge Shot
+
+Each paddle has a charge meter drawn on the paddle itself, filled in six segments.
+
+- A center hit (ball strikes the middle half of the paddle) adds **1/6**.
+- A hit on either edge (outer quarters) adds **2/6**.
+- When all six segments are full the paddle glows.
+- Press the action key to arm the paddle, then land the next hit to fire the ball at **double speed**; the charge resets to zero.
+- Deflecting a charged ball fills and immediately spends your charge, so your return is charged too.
+- Scoring a point grants the scorer **3/6** charge.
+- Charged shots leave a glowing trail behind the ball until the next paddle hit or point.
+- In single-player mode the AI builds and fires charge shots on its own.
+
+| Paddle        | Action key |
+|---------------|------------|
+| Player 1      | **Space**  |
+| Player 2      | **L**      |
+| AI            | automatic  |
+
 ## Scene Structure
 
 The game is organized into multiple scenes to streamline gameplay and enhance user experience:
@@ -96,14 +117,17 @@ The game is organized into multiple scenes to streamline gameplay and enhance us
 - **Player 1:** 
   - **↑** - Move paddle up
   - **↓** - Move paddle down
+  - **Space** - Arm charge shot
 
 ### Co-op Mode (Two Players)
 - **Player 1:**
   - **A** - Move paddle up
   - **Z** - Move paddle down
+  - **Space** - Arm charge shot
 - **Player 2:**
   - **K** - Move paddle up
   - **M** - Move paddle down
+  - **L** - Arm charge shot
 
 Additionally:
 - **ESC** - Pause or resume
@@ -127,7 +151,7 @@ The source is organized into distinct modules and scenes:
 
 ## Versioning
 
-The project version lives in `package.json`. The current version is **0.2.0**. Releases are tagged in git as `vX.Y.Z`, and the release workflows read the version from those tags. See [CHANGELOG.md](CHANGELOG.md) for details.
+The project version lives in `package.json`. The current version is **0.3.0**. Releases are tagged in git as `vX.Y.Z`, and the release workflows read the version from those tags. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## License
 

@@ -8,8 +8,16 @@ import {
     MAX_SPEED,
     PADDLE_SPEED,
     AI_SPEED,
+    CHARGE_MAX,
+    CHARGE_CENTER,
+    CHARGE_SIDE,
+    CHARGE_SCORE,
+    BOOST_FACTOR,
 } from "../game.js";
 import BaseScene from "./BaseScene.js";
+
+const PLAYER_CHARGE_COLOR = 0x35e0ff;
+const AI_CHARGE_COLOR = 0xff4d8d;
 
 export default class GameScene extends BaseScene {
     constructor() {
@@ -33,6 +41,7 @@ export default class GameScene extends BaseScene {
         this.gameActive = true;
         this.ballDirection = 1;
         this.currentBallSpeed = BALL_SPEED;
+        this.ballSpeedMultiplier = 1;
         this.isPaused = false;
 
         this.highScores = [];
@@ -68,6 +77,9 @@ export default class GameScene extends BaseScene {
         );
         this.physics.add.existing(this.ai, true);
 
+        this.setupCharge(this.player, PLAYER_CHARGE_COLOR);
+        this.setupCharge(this.ai, AI_CHARGE_COLOR);
+
         this.add
             .rectangle(config.width / 2, config.height / 2, 3, config.height - 100, 0xffffff)
             .setAlpha(0.75);
@@ -82,6 +94,31 @@ export default class GameScene extends BaseScene {
         this.physics.add.existing(this.ball);
         this.ball.body.setCollideWorldBounds(true, 1, 1);
         this.ball.body.setBounce(1, 1);
+
+        this.hitParticles = this.add.particles(0, 0, "pixel", {
+            frame: "white",
+            lifespan: 800,
+            speed: { min: 50, max: 150 },
+            scale: { start: 0.8, end: 0 },
+            alpha: { start: 1, end: 0 },
+            blendMode: "ADD",
+            frequency: -1,
+        });
+        this.hitParticles.setDepth(1);
+
+        this.ballTrail = this.add.particles(0, 0, "pixel", {
+            lifespan: 350,
+            speed: { min: 0, max: 30 },
+            scale: { start: 0.9, end: 0 },
+            alpha: { start: 0.9, end: 0 },
+            blendMode: "ADD",
+            tint: 0x66e0ff,
+            frequency: 16,
+            follow: this.ball,
+        });
+        this.ballTrail.setDepth(1);
+        this.ballTrail.stop();
+
         this.resetBall();
 
         this.physics.add.collider(
@@ -110,17 +147,59 @@ export default class GameScene extends BaseScene {
         });
 
         this.createPauseMenu();
+    }
 
-        this.hitParticles = this.add.particles(0, 0, "pixel", {
-            frame: "white",
-            lifespan: 800,
-            speed: { min: 50, max: 150 },
-            scale: { start: 0.8, end: 0 },
-            alpha: { start: 1, end: 0 },
-            blendMode: "ADD",
-            frequency: -1,
+    setupCharge(paddle, color) {
+        paddle.charge = 0;
+        paddle.armed = false;
+        paddle.chargeColor = color;
+
+        paddle.chargeFill = this.add
+            .rectangle(
+                paddle.x,
+                paddle.y + paddle.height / 2,
+                paddle.width,
+                paddle.height,
+                color,
+            )
+            .setOrigin(0.5, 1)
+            .setAlpha(0.9);
+
+        paddle.glow = this.add
+            .rectangle(paddle.x, paddle.y, paddle.width + 16, paddle.height + 16, color)
+            .setAlpha(0)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setDepth(-1)
+            .setVisible(false);
+
+        this.tweens.add({
+            targets: paddle.glow,
+            alpha: { from: 0.15, to: 0.7 },
+            duration: 450,
+            yoyo: true,
+            repeat: -1,
         });
-        this.hitParticles.setDepth(1);
+
+        this.refreshChargeDisplay(paddle);
+    }
+
+    refreshChargeDisplay(paddle) {
+        paddle.chargeFill.setScale(1, paddle.charge / CHARGE_MAX);
+        const ready = paddle.charge >= CHARGE_MAX || paddle.armed;
+        paddle.glow.setVisible(ready);
+        paddle.fillColor = ready ? paddle.chargeColor : 0xffffff;
+    }
+
+    addCharge(paddle, amount) {
+        if (paddle.armed) return;
+        paddle.charge = Phaser.Math.Clamp(paddle.charge + amount, 0, CHARGE_MAX);
+        this.refreshChargeDisplay(paddle);
+    }
+
+    tryArm(paddle) {
+        if (paddle.armed || paddle.charge < CHARGE_MAX) return;
+        paddle.armed = true;
+        this.refreshChargeDisplay(paddle);
     }
 
     setupInput() {
@@ -139,6 +218,12 @@ export default class GameScene extends BaseScene {
         );
         this.player2Down = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.M,
+        );
+        this.player1Action = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+        );
+        this.player2Action = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.L,
         );
     }
 
@@ -163,8 +248,8 @@ export default class GameScene extends BaseScene {
 
         const controlsText =
             this.gameMode === "single"
-                ? "Controls: Arrow Keys (Player 1)"
-                : "Controls: A/Z (Player 1), K/M (Player 2)";
+                ? "Controls: Arrow Keys + SPACE (charge shot)"
+                : "Controls: A/Z + SPACE (Player 1), K/M + L (Player 2)";
 
         this.add
             .text(config.width / 2, config.height - 30, controlsText, {
@@ -235,8 +320,9 @@ export default class GameScene extends BaseScene {
             this.currentBallSpeed + SPEED_INCREASE,
             MAX_SPEED,
         );
+        const effectiveSpeed = this.currentBallSpeed * this.ballSpeedMultiplier;
         const speedIncreasePercent = Math.round(
-            ((this.currentBallSpeed - BALL_SPEED) / BALL_SPEED) * 100,
+            ((effectiveSpeed - BALL_SPEED) / BALL_SPEED) * 100,
         );
         this.speedText.setText(`SPEED: +${speedIncreasePercent}%`);
 
@@ -244,8 +330,8 @@ export default class GameScene extends BaseScene {
         if (x === 0 && y === 0) return;
 
         const angle = Math.atan2(y, x);
-        this.ball.body.velocity.x = Math.cos(angle) * this.currentBallSpeed;
-        this.ball.body.velocity.y = Math.sin(angle) * this.currentBallSpeed;
+        this.ball.body.velocity.x = Math.cos(angle) * effectiveSpeed;
+        this.ball.body.velocity.y = Math.sin(angle) * effectiveSpeed;
     }
 
     resetBall() {
@@ -253,6 +339,8 @@ export default class GameScene extends BaseScene {
         this.ball.y = config.height / 2;
         this.ball.fillColor = 0xffffff;
         this.ball.body.setVelocity(0, 0);
+        this.ballSpeedMultiplier = 1;
+        this.ballTrail.stop();
         this.startCountdown();
     }
 
@@ -298,7 +386,6 @@ export default class GameScene extends BaseScene {
 
     ballHitPaddle(ball, paddle) {
         this.audio.play("hit");
-        this.hitParticles.explode(10, ball.x, ball.y);
 
         const hitPosition =
             (ball.y - (paddle.y - paddle.height / 2)) / paddle.height;
@@ -306,9 +393,28 @@ export default class GameScene extends BaseScene {
             Phaser.Math.Clamp(Math.round((hitPosition - 0.5) * 5) * 30, -60, 60),
         );
 
-        const speed = Math.hypot(ball.body.velocity.x, ball.body.velocity.y);
         const xDirection = paddle === this.player ? 1 : -1;
 
+        // A charged ball refills and spends the paddle's charge on its own.
+        if (paddle.armed || this.ballSpeedMultiplier > 1) {
+            paddle.armed = false;
+            paddle.charge = 0;
+            this.ballSpeedMultiplier = BOOST_FACTOR;
+            ball.fillColor = paddle.chargeColor;
+            this.ballTrail.start();
+            this.hitParticles.explode(24, ball.x, ball.y);
+            this.refreshChargeDisplay(paddle);
+        } else {
+            this.ballSpeedMultiplier = 1;
+            ball.fillColor = 0xffffff;
+            this.ballTrail.stop();
+            this.hitParticles.explode(10, ball.x, ball.y);
+
+            const isCenter = hitPosition >= 0.25 && hitPosition <= 0.75;
+            this.addCharge(paddle, isCenter ? CHARGE_CENTER : CHARGE_SIDE);
+        }
+
+        const speed = this.currentBallSpeed * this.ballSpeedMultiplier;
         ball.body.velocity.x = Math.cos(angle) * speed * xDirection;
         ball.body.velocity.y = Math.sin(angle) * speed;
     }
@@ -325,6 +431,17 @@ export default class GameScene extends BaseScene {
     handleInput() {
         if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
             this.togglePause();
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.player1Action)) {
+            this.tryArm(this.player);
+        }
+
+        if (
+            this.gameMode !== "single" &&
+            Phaser.Input.Keyboard.JustDown(this.player2Action)
+        ) {
+            this.tryArm(this.ai);
         }
     }
 
@@ -346,6 +463,7 @@ export default class GameScene extends BaseScene {
             } else if (this.ball.y > this.ai.y) {
                 this.ai.y += AI_SPEED;
             }
+            this.tryArm(this.ai);
         } else if (this.player2Up.isDown) {
             this.ai.y -= PADDLE_SPEED;
         } else if (this.player2Down.isDown) {
@@ -359,14 +477,18 @@ export default class GameScene extends BaseScene {
                 config.height - paddle.height / 2,
             );
             paddle.body.updateFromGameObject();
+            paddle.chargeFill.setPosition(paddle.x, paddle.y + paddle.height / 2);
+            paddle.glow.setPosition(paddle.x, paddle.y);
         }
     }
 
     checkScoring() {
         if (this.ball.x < 20) {
             this.aiScore++;
+            this.addCharge(this.ai, CHARGE_SCORE);
         } else if (this.ball.x > config.width - 20) {
             this.playerScore++;
+            this.addCharge(this.player, CHARGE_SCORE);
         } else {
             return;
         }
